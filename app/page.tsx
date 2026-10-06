@@ -12,7 +12,7 @@ const page = () => {
   return (
     <div>
 
-      {/* ===================== HERO SECTION (already built — untouched) ===================== */}
+      {/* ===================== HERO SECTION (already built — untouched) =====================.  */}
       <section className="hero bg-[url('/images/rcf-hero.png')] w-screen h-227.25 bg-cover bg-center flex-col items-center flex  pt-[20px]  px-6.5 ">
 
         <div className="nav flex flex-row w-full h-fit items-center justify-between ">

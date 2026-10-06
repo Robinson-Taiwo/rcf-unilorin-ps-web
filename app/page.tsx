@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import React from 'react'
-import logo from "@/public/images/rcf-logo.png"
+import logo from "@/public/Images/rcf-logo.png"
 import menu from "@/public/icons/hamburger.svg"
 import { Button } from '@/components/ui/button'
 import { Clock } from 'lucide-react'
@@ -191,25 +191,25 @@ const page = () => {
 
           {/* Left stacked column — two images */}
           <div className="flex flex-col gap-5 shrink-0">
-            <div className="relative w-67 h-45 rounded-2xl overflow-hidden">
+            <div className="relative w-[327px] h-[355px] rounded-2xl overflow-hidden">
               <Image src="/images/holy-holy.png" alt="Holy Holy worship night" fill className="object-cover" />
             </div>
-            <div className="relative w-67 h-71.5 rounded-2xl overflow-hidden">
+            <div className="relative w-[327px] h-[475px] rounded-2xl overflow-hidden">
               <Image src="/images/bw-hands.png" alt="Worship black and white" fill className="object-cover" />
             </div>
           </div>
 
           {/* Center tall image */}
-          <div className="relative w-101 h-201.5 rounded-2xl overflow-hidden shrink-0">
+          <div className="relative w-[498px] h-[1013px] rounded-2xl overflow-hidden shrink-0">
             <Image src="/images/prayer-center.png" alt="Students praying" fill className="object-cover" />
           </div>
 
           {/* Right stacked column — two images */}
           <div className="flex flex-col gap-5 shrink-0">
-            <div className="relative w-67 h-91 rounded-2xl overflow-hidden">
+            <div className="relative w-[327px] h-[470px] rounded-2xl overflow-hidden">
               <Image src="/images/crowd-hands.png" alt="Congregation worship" fill className="object-cover" />
             </div>
-            <div className="relative w-67 h-71.5 rounded-2xl overflow-hidden">
+            <div className="relative w-[327px] h-[355px] rounded-2xl overflow-hidden">
               <Image src="/images/prayer-back.png" alt="Prayer shirt back view" fill className="object-cover" />
             </div>
           </div>

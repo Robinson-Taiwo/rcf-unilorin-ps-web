@@ -1,15 +1,11 @@
-import React from 'react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
-import { ChevronLeft } from 'lucide-react'
-import SiteNav from '@/components/site-nav'
-import SiteFooter from '@/components/site-footer'
-import VisitCard from '@/components/visit-card'
-import EventCard from '@/components/event-card'
-import { Button } from '@/components/ui/button'
-import { events, getEvent } from '@/data/events'
-// import { events, getEvent } from '@/data/Events'
+import Image from "next/image"
+import { notFound } from "next/navigation"
+import SiteNav from "@/components/site-nav"
+import SiteFooter from "@/components/site-footer"
+import VisitCard from "@/components/visit-card"
+import EventCard from "@/components/event-card"
+import BackButton from "@/components/back-button"
+import { events, getEvent } from "@/data/events"
 
 // Pre-render one page per event at build time
 export function generateStaticParams() {
@@ -17,7 +13,7 @@ export function generateStaticParams() {
 }
 
 // Next.js 15+: params is a Promise
-const page = async ({ params }: { params: Promise<{ id: string }> }) => {
+export default async function EventDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const event = getEvent(id)
 
@@ -26,105 +22,109 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
   // "See more" shows two other events
   const moreEvents = events.filter((e) => e.id !== event.id).slice(0, 2)
 
-  // Right-hand side panel rows
+  // Right-hand panel rows
   const details = [
-    { label: 'Overview', value: event.overview },
-    { label: 'Recurrence', value: event.recurrence },
-    { label: 'Date', value: event.date },
-    { label: 'Time', value: event.time },
-    { label: 'Cost', value: event.cost },
-    { label: 'Location & Directions', value: event.location, href: event.directionsUrl },
+    { label: "Overview", value: event.overview },
+    { label: "Recurrence", value: event.recurrence },
+    { label: "Date", value: event.date },
+    { label: "Time", value: event.time },
+    { label: "Cost", value: event.cost },
+    { label: "Location & Directions", value: event.location, href: event.directionsUrl },
   ]
 
   return (
-    <div className="w-full overflow-x-hidden">
+    <main className="w-full overflow-x-hidden bg-[#d9d9d9]">
 
       {/* ===================== NAV ===================== */}
       <SiteNav />
 
-      {/* ===================== EVENT DETAILS ===================== */}
-      <section className="event-details w-full bg-[#d9d9d9] px-6 md:px-12 lg:px-[120px] pt-14 md:pt-20 pb-16 md:pb-24">
 
-        {/* Back button */}
-        <Link
-          href="/events"
-          className="inline-flex items-center gap-1 bg-[#1c1c1c] text-white text-xs font-medium tracking-wide rounded-full pl-3 pr-5 py-2.5 mb-4"
-        >
-          <ChevronLeft size={14} />
-          BACK
-        </Link>
+      {/* ===================== EVENT DETAILS — 1200 wide ===================== */}
+      <section className="mx-auto w-full max-w-[1240px] px-5 pt-14 pb-16 lg:pt-[114px] lg:pb-[128px]">
 
-        {/* Big sans-serif title */}
-        <h1 className="font-sans font-bold tracking-tight text-[#1c1c1c] text-4xl sm:text-6xl lg:text-[109px] leading-none mb-8 md:mb-10">
-          {event.shortTitle}
-        </h1>
+        {/* Back + title. Figma indents this block 20px from the poster edge */}
+        <div className="flex flex-col items-start gap-6 lg:gap-[34px] lg:px-5">
+          <BackButton href="/events" />
+          <h1 className="cap-trim text-[44px] leading-[1.1] font-semibold tracking-[-0.05em] text-[#1c1c1c] sm:text-[64px] lg:text-[109px] lg:leading-[109px]">
+            {event.shortTitle}
+          </h1>
+        </div>
 
-        {/* Two columns: poster + copy | divider + details panel */}
-        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] gap-10 md:gap-x-8">
+        {/* Poster column (682) | 1px divider | details panel (468) */}
+        <div className="mt-10 flex flex-col gap-12 lg:mt-[70px] lg:flex-row lg:items-stretch lg:justify-between lg:gap-0">
 
           {/* LEFT — poster, description, register */}
-          <div className="flex flex-col gap-8">
+          <div className="flex w-full flex-col items-start gap-[25px] lg:w-[682px] lg:shrink-0">
+            <div className="flex w-full flex-col gap-10 lg:gap-[58px]">
 
-            <div className="relative   h-[595px] w-[682px] rounded-xl overflow-hidden">
-              <Image
-                src={event.image}
-                alt={event.title}
-                fill
-                priority
-                // sizes="(min-width: 768px) 55vw, 92vw"
-                className="object-cover"
-              />
-            </div>
+              {/* Poster — 682 x 595, 10px corners */}
+              <div className="relative aspect-[682/595] w-full overflow-hidden rounded-[10px]">
+                <Image
+                  src={event.image}
+                  alt={event.title}
+                  fill
+                  priority
+                  sizes="(min-width: 1024px) 682px, 100vw"
+                  className="object-cover object-[center_9%]"
+                />
+              </div>
 
-            <div className="flex flex-col gap-5 text-[#1c1c1c] text-sm md:text-base leading-relaxed max-w-xl">
-              {event.description.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
-              <p>{event.note}</p>
+              {/* Description — Inter Medium 25 / 39, −5% letter spacing, one empty line between paragraphs */}
+              <div className="cap-trim max-w-[657px] space-y-[30px] text-lg leading-[30px] font-medium tracking-[-0.05em] lg:min-h-[330px] lg:space-y-[39px] lg:text-[25px] lg:leading-[39px]">
+                {event.description.map((paragraph) => (
+                  <p key={paragraph} className="text-[#242323]/70">{paragraph}</p>
+                ))}
+                <p className="text-[#1c1c1c]">{event.note}</p>
+              </div>
             </div>
 
             <a
               href={event.registerUrl}
-              className="inline-flex items-center justify-center bg-[#4FA8E0] text-[#0b2a4a] text-[13px] w-full sm:w-fit h-11.5 px-8 rounded-lg font-medium tracking-wide hover:bg-[#4FA8E0]/90"
+              className="flex h-[58px] w-[218px] items-center justify-center rounded-[10px] bg-[#00a8e8] text-[18px] leading-[27px] tracking-[0.05em] text-[#18306e] hover:bg-[#00a8e8]/90"
             >
               REGISTER NOW
             </a>
-
           </div>
 
-          {/* RIGHT — details panel with a vertical divider on desktop */}
-          <aside className="flex flex-col gap-6 border-t border-gray-500 pt-8 md:border-t-0 md:border-l md:pt-0 md:pl-6">
+          {/* Divider — horizontal on mobile, full-height vertical line on desktop */}
+          <div aria-hidden className="h-px w-full shrink-0 bg-[#8a8d93] lg:h-auto lg:w-px" />
 
-            <h2 className="text-[#4FA8E0] text-2xl font-semibold tracking-tight">Event Details</h2>
+          {/* RIGHT — details panel, 468 wide */}
+          <aside className="flex w-full flex-col gap-[42px] lg:w-[468px] lg:shrink-0">
+            <h2 className="cap-trim text-[32px] font-semibold text-[#00a8e8] lg:text-[40px]">Event Details</h2>
 
-            {details.map((item) => (
-              <div key={item.label} className="flex flex-col gap-1.5">
-                {item.href ? (
-                  <a href={item.href} className="text-[#4FA8E0] text-lg font-medium hover:underline w-fit">
-                    {item.label}
-                  </a>
-                ) : (
-                  <h3 className="text-[#4FA8E0] text-lg font-medium">{item.label}</h3>
-                )}
-                <p className="text-gray-700 text-sm leading-relaxed">{item.value}</p>
-              </div>
-            ))}
-
+            <dl className="flex flex-col gap-[45px]">
+              {details.map((item) => (
+                <div key={item.label} className="flex flex-col gap-[26px]">
+                  <dt className="cap-trim text-[24px] font-medium text-[#00a8e8] lg:text-[30px]">
+                    {item.href ? (
+                      <a href={item.href} target="_blank" rel="noreferrer" className="hover:underline">
+                        {item.label}
+                      </a>
+                    ) : (
+                      item.label
+                    )}
+                  </dt>
+                  <dd className="cap-trim text-[18px] leading-[27px] tracking-[-0.02em] text-[#242323]/70 lg:text-[21px]">
+                    {item.value}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </aside>
 
         </div>
-
       </section>
 
 
-      {/* ===================== SEE MORE UPCOMING EVENTS ===================== */}
-      <section className="more-events w-full bg-[#d9d9d9] px-6 md:px-12 lg:px-20 pb-16 md:pb-20">
-
-        <h2 className="font-sans font-semibold tracking-tight text-[#1c1c1c] text-3xl sm:text-4xl md:text-5xl mb-8 md:mb-10">
+      {/* ===================== SEE MORE UPCOMING EVENTS — 1209 wide ===================== */}
+      <section className="mx-auto w-full max-w-[1249px] px-5 pb-16 lg:pb-[71px]">
+        <h2 className="cap-trim text-[36px] leading-[1.1] font-semibold tracking-[-0.05em] text-[#1c1c1c] md:text-[56px] lg:text-[77px] lg:leading-[77px]">
           See More Upcoming Events
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-10">
+        {/* Two 590-wide cards, 29px apart */}
+        <div className="mt-10 grid grid-cols-1 gap-x-[29px] gap-y-14 md:grid-cols-2 lg:mt-[70px]">
           {moreEvents.map((e) => (
             <EventCard
               key={e.id}
@@ -135,17 +135,18 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
             />
           ))}
         </div>
-
       </section>
 
-      {/* ===================== VISIT US ===================== */}
-      <VisitCard />
+
+      {/* ===================== VISIT US — 71px above and below ===================== */}
+      <section className="w-full px-5 pb-16 lg:pb-[71px]">
+        <VisitCard />
+      </section>
+
 
       {/* ===================== FOOTER ===================== */}
       <SiteFooter />
 
-    </div>
+    </main>
   )
 }
-
-export default page

@@ -1,46 +1,24 @@
-import Image from 'next/image'
-import Link from 'next/link'
-import React from 'react'
-import logo from '@/public/Images/rcf-logo.png'
-import menu from '@/public/icons/hamburger.svg'
+import Image from "next/image"
+import Link from "next/link"
+import logo from "@/public/Images/rcf-logo.png"
+import menu from "@/public/icons/hamburger.svg"
 
-type SiteNavProps = {
-  // 'solid'       -> dark bar in normal flow (About, Events, Testimony)
-  // 'transparent' -> floats over a hero image (Give). The parent section must be `relative`.
-  variant?: 'solid' | 'transparent'
-}
-
-const SiteNav = ({ variant = 'solid' }: SiteNavProps) => {
-  const base =
-    'site-nav w-full h-18 md:h-22 flex flex-row items-center justify-between px-6 md:px-10'
+// Mobile: 30px side padding, 44px logo, 24px menu button
+// Desktop: 35px side padding, 66px logo, 44px menu button
+export default function SiteNav({ variant = "solid" }: { variant?: "solid" | "transparent" }) {
   const styles =
-    variant === 'transparent'
-      ? 'absolute top-0 left-0 z-20 bg-transparent'
-      : 'bg-[#1c1c1c]'
+    variant === "solid"
+      ? "sticky top-0 z-50 h-16 bg-[#1d1c1c] lg:h-[100px]"
+      : "absolute inset-x-0 top-0 z-50 py-[10px] lg:py-0 lg:pt-[36px]"
 
   return (
-    <header className={`${base} ${styles}`}>
-
-      <Link href="/" aria-label="RCF Unilorin PS home">
-        <Image
-          className="h-12 w-12 md:h-15 md:w-15"
-          src={logo}
-          height={60}
-          width={60}
-          alt="rcf logo"
-        />
+    <header className={`flex w-full items-center justify-between px-[30px] lg:px-[35px] ${styles}`}>
+      <Link href="/">
+        <Image src={logo} alt="RCF Unilorin PS logo" priority className="size-11 lg:size-[66px]" />
       </Link>
-
-      <Image
-        className="cursor-pointer w-7 md:w-8.25 h-auto"
-        src={menu}
-        height={16.5}
-        width={33}
-        alt="menu"
-      />
-
+      <button type="button" aria-label="Open menu" className="flex size-6 cursor-pointer items-center justify-center lg:size-11">
+        <Image src={menu} alt="" className="h-[9px] w-[18px] lg:h-[16.5px] lg:w-[33px]" />
+      </button>
     </header>
   )
 }
-
-export default SiteNav

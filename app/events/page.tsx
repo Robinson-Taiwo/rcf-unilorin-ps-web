@@ -1,48 +1,39 @@
-import React from 'react'
-import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
-import SiteNav from '@/components/site-nav'
-import SiteFooter from '@/components/site-footer'
-import VisitCard from '@/components/visit-card'
-import EventCard from '@/components/event-card'
-import { events } from '@/data/events'
+import SiteNav from "@/components/site-nav"
+import SiteFooter from "@/components/site-footer"
+import VisitCard from "@/components/visit-card"
+import EventCard from "@/components/event-card"
+import BackButton from "@/components/back-button"
+import { events } from "@/data/events"
 
-const page = () => {
+export default function EventsPage() {
   return (
-    <div className="w-full overflow-x-hidden">
+    <main className="w-full overflow-x-hidden bg-[#d9d9d9]">
 
       {/* ===================== NAV ===================== */}
       <SiteNav />
 
-      {/* ===================== HEADER + EVENTS GRID ===================== */}
-      <section className="events-page w-full bg-[#d9d9d9] px-6 md:px-20 pt-16 md:pt-24 pb-16 md:pb-24">
 
-        {/* Back button */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1 bg-[#1c1c1c] text-white text-xs font-medium tracking-wide rounded-full pl-3 pr-5 py-2.5 mb-6"
-        >
-          <ChevronLeft size={14} />
-          BACK
-        </Link>
+      {/* ===================== HEADER + EVENTS GRID — 1204 wide ===================== */}
+      <section className="mx-auto w-full max-w-[1244px] px-5 pt-14 pb-16 lg:pt-[144px] lg:pb-[130px]">
 
-        {/* Title (left) + intro paragraph (right, bottom-aligned on desktop) */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 md:gap-10 mb-12 md:mb-16">
+        <BackButton href="/" />
 
-          <h1 className="font-serif text-[#1c1c1c] text-5xl md:text-6xl leading-[0.95] max-w-xs md:max-w-sm">
-            UPCOMING EVENTS
+        {/* Title (568 wide) + intro paragraph bottom-aligned, 15px apart */}
+        <div className="mt-[42px] flex flex-col gap-6 md:flex-row md:items-end md:gap-[15px]">
+          <h1 className="cap-trim shrink-0 font-serif text-[52px] leading-[56px] tracking-[-0.03em] text-[#1c1c1c] md:w-[400px] lg:w-[568px] lg:text-[77px] lg:leading-[83px]">
+            UPCOMING
+            <br />
+            EVENTS
           </h1>
 
-          <p className="text-[#1c1c1c] text-xs md:text-[13px] leading-relaxed max-w-md">
-            Stay in the loop with what&apos;s happening at RCF. From worship
-            Sundays to varieties Sundays, there&apos;s always something to look
-            forward to. See what&apos;s coming up.
+          <p className="cap-trim min-w-0 flex-1 text-base leading-[26px] tracking-[0.05em] text-black lg:text-[18px] lg:leading-[27px]">
+            Stay in the loop with what&apos;s happening at RCF. From worship Sundays to varieties Sundays,
+            there&apos;s always something to look forward to. See what&apos;s coming up.
           </p>
-
         </div>
 
-        {/* 1 column on mobile, 2 on tablet, 3 on wide screens */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-4 gap-y-10 md:gap-y-12">
+        {/* 2 columns — 24px column gap, 72px row gap */}
+        <div className="mt-14 grid grid-cols-1 gap-x-6 gap-y-14 md:grid-cols-2 lg:mt-[95px] lg:gap-y-[72px]">
           {events.map((event) => (
             <EventCard
               key={event.id}
@@ -56,14 +47,16 @@ const page = () => {
 
       </section>
 
-      {/* ===================== VISIT US ===================== */}
-      <VisitCard />
+
+      {/* ===================== VISIT US — 130px above and below ===================== */}
+      <section className="w-full px-5 pb-16 lg:pb-[130px]">
+        <VisitCard />
+      </section>
+
 
       {/* ===================== FOOTER ===================== */}
       <SiteFooter />
 
-    </div>
+    </main>
   )
 }
-
-export default page

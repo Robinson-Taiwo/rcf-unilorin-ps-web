@@ -1,97 +1,79 @@
-'use client'
+"use client"
 
-import React, { useState } from 'react'
+import { useState } from "react"
 
-type GiveTab = 'offerings' | 'tithe' | 'project'
+const tabs = [
+  { value: "offerings", label: "OFFERINGS" },
+  { value: "tithe", label: "TITHE" },
+  { value: "project", label: "PROJECT" },
+] as const
 
-type Account = {
-  bank: string
-  accountName: string
-  accountNumber: string
+type Tab = (typeof tabs)[number]["value"]
+
+// TODO: real account details per tab
+const accounts: Record<Tab, { label: string; value: string }[]> = {
+  offerings: [
+    { label: "Bank", value: "First Bank" },
+    { label: "Account Name", value: "RCF Unilorin" },
+    { label: "Account Number", value: "0123456789" },
+  ],
+  tithe: [
+    { label: "Bank", value: "First Bank" },
+    { label: "Account Name", value: "RCF Unilorin" },
+    { label: "Account Number", value: "0123456789" },
+  ],
+  project: [
+    { label: "Bank", value: "First Bank" },
+    { label: "Account Name", value: "RCF Unilorin" },
+    { label: "Account Number", value: "0123456789" },
+  ],
 }
 
-// Placeholder details — replace with the fellowship's real accounts.
-// If every tab uses the same account, keep the values identical.
-const TABS: { id: GiveTab; label: string; account: Account }[] = [
-  {
-    id: 'offerings',
-    label: 'OFFERINGS',
-    account: { bank: 'First Bank', accountName: 'RCF Unilorin', accountNumber: '0123456789' },
-  },
-  {
-    id: 'tithe',
-    label: 'TITHE',
-    account: { bank: 'First Bank', accountName: 'RCF Unilorin', accountNumber: '0123456789' },
-  },
-  {
-    id: 'project',
-    label: 'PROJECT',
-    account: { bank: 'First Bank', accountName: 'RCF Unilorin', accountNumber: '0123456789' },
-  },
-]
-
-const GiveCard = () => {
-  const [active, setActive] = useState<GiveTab>('offerings')
-
-  const current = TABS.find((t) => t.id === active)!
-  const rows = [
-    { label: 'Bank', value: current.account.bank },
-    { label: 'Account Name', value: current.account.accountName },
-    { label: 'Account Number', value: current.account.accountNumber },
-  ]
+// 505 x 495 white card, blue border, 45px corners
+export default function GiveCard() {
+  const [tab, setTab] = useState<Tab>("offerings")
 
   return (
-    <div className="give-card w-full max-w-[480px] bg-white rounded-[28px] md:rounded-[36px] border border-[#4FA8E0]/70 shadow-[0_0_30px_rgba(79,168,224,0.25)] p-5 sm:p-8">
+    <div className="flex w-full max-w-[505px] shrink-0 flex-col items-center justify-center gap-[34px] overflow-hidden rounded-[32px] border border-[#00a8e8] bg-white px-5 py-10 sm:px-10 lg:h-[495px] lg:rounded-[45px] lg:px-0 lg:py-0">
 
-      {/* Tabs */}
+      {/* Toggle — 425 x 66 track, three 129 x 45 tabs, 6px apart */}
       <div
         role="tablist"
-        aria-label="Giving category"
-        className="grid grid-cols-3 bg-[#e8e8e8] rounded-full p-1.5 md:p-2"
+        aria-label="Giving type"
+        className="flex h-[66px] w-full max-w-[425px] items-center justify-center gap-[6px] rounded-[33px] bg-[#8a8d93]/20 px-[10px]"
       >
-        {TABS.map((tab) => {
-          const isActive = tab.id === active
+        {tabs.map((t) => {
+          const active = tab === t.value
           return (
             <button
-              key={tab.id}
-              id={`give-tab-${tab.id}`}
-              role="tab"
+              key={t.value}
               type="button"
-              aria-selected={isActive}
-              aria-controls="give-panel"
-              onClick={() => setActive(tab.id)}
-              className={`rounded-full py-2.5 md:py-3 text-[11px] sm:text-xs md:text-sm font-medium tracking-wide transition-colors ${
-                isActive ? 'bg-[#1c1c1c] text-white' : 'text-[#1c1c1c] hover:bg-black/5'
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(t.value)}
+              className={`flex h-[45px] w-full max-w-[129px] cursor-pointer items-center justify-center rounded-[25px] text-[14px] leading-[27px] font-medium tracking-[0.05em] transition-colors sm:text-[16px] ${
+                active ? "bg-[#1d1c1c] text-white" : "text-[#1c1c1c] hover:bg-black/5"
               }`}
             >
-              {tab.label}
+              {t.label}
             </button>
           )
         })}
       </div>
 
-      {/* Account details */}
-      <div
-        id="give-panel"
-        role="tabpanel"
-        aria-labelledby={`give-tab-${active}`}
-        className="flex flex-col gap-3 mt-5 md:mt-7 md:mb-6"
-      >
-        {rows.map((row) => (
+      {/* Account rows — 79 tall, 16px apart */}
+      <dl className="flex w-full max-w-[425px] flex-col gap-4">
+        {accounts[tab].map((row) => (
           <div
             key={row.label}
-            className="flex items-center justify-between gap-4 bg-[#e8e8e8] border border-gray-300 rounded-[20px] min-h-14 md:min-h-16 px-5 md:px-6 py-3"
+            className="flex h-[79px] items-center justify-between gap-4 rounded-[25px] border-[0.5px] border-[#8a8d93] bg-[#e8e8e9] px-5 text-base leading-[27px] tracking-[0.05em] sm:text-[18px]"
           >
-            <span className="text-gray-500 text-sm md:text-base shrink-0">{row.label}</span>
-            <span className="text-[#1c1c1c] text-sm md:text-base font-semibold text-right break-words tabular-nums">
-              {row.value}
-            </span>
+            <dt className="font-light text-[#242323]/70">{row.label}</dt>
+            <dd className="text-right font-bold text-[#1c1c1c]">{row.value}</dd>
           </div>
         ))}
-      </div>
+      </dl>
 
     </div>
   )
 }
-
-export default GiveCard

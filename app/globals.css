@@ -147,3 +147,20 @@
 .animate-marquee {
   animation: marquee-scroll 25s linear infinite;
 }
+
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-fraunces);
+}
+
+/* Figma measures text from cap height to baseline ("vertical trim").
+   This makes the browser do the same, so Figma gaps can be used as-is. */
+@utility cap-trim {
+  text-box: trim-both cap alphabetic;
+}
+
+/* Fraunces settings used in the design */
+.font-serif {
+  font-variation-settings: "SOFT" 0, "WONK" 1;
+}

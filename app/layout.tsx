@@ -3,14 +3,14 @@ import { Geist, Geist_Mono, Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", axes: ["opsz"] })
+const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-fraunces", axes: ["SOFT", "WONK", "opsz"] })
+
 
 // Serif used for headings (Tailwind's `font-serif`)
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  display: "swap",
-});
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

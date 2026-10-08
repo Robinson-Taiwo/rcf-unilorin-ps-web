@@ -1,105 +1,122 @@
-import React from 'react'
-import Image, { StaticImageData } from 'next/image'
-import SiteNav from '@/components/site-nav'
-import SiteFooter from '@/components/site-footer'
-import GiveCard from '@/components/give-card'
-import heroBg from '@/public/Images/rcf-hero.png'
-import bus from '@/public/Images/give-bus.png'
-import accommodation from '@/public/Images/give-accomodation.png'
-import sound from '@/public/Images/give-sound.png'
-import solar from '@/public/Images/give-solar.png'
+import Image, { type StaticImageData } from "next/image"
+import SiteNav from "@/components/site-nav"
+import SiteFooter from "@/components/site-footer"
+import GiveCard from "@/components/give-card"
+import heroBg from "@/public/Images/rcf-hero.png"
+import bus from "@/public/Images/give-bus.png"
+import accommodation from "@/public/Images/give-accomodation.png"
+import sound from "@/public/Images/give-sound.png"
+import solar from "@/public/Images/give-solar.png"
 
-// "Other church needs" photo strip — swap in real images/titles.
-const needs: { image: StaticImageData; alt: string }[] = [
-  { image: bus, alt: 'Church bus' },
-  { image: accommodation, alt: 'Student accommodation' },
-  { image: sound, alt: 'Sound equipment' },
-  { image: solar, alt: 'Solar panels' },
+// Hero photo overlay: 71% black plus the same fades used on the landing hero
+const heroOverlay =
+  "linear-gradient(rgba(0,0,0,0.71), rgba(0,0,0,0.71)), linear-gradient(180deg, rgba(102,102,102,0.024) 0%, rgba(0,0,0,0.81) 100%), linear-gradient(0.25deg, rgba(102,102,102,0) 10.3%, rgba(0,0,0,0.38) 96.9%)"
+
+// "Other church needs" strip — each photo has its own overlay in Figma
+type Overlay = { image: string; hardLight?: boolean }
+
+const needs: { image: StaticImageData; alt: string; overlays: Overlay[] }[] = [
+  {
+    image: bus,
+    alt: "Church bus",
+    overlays: [
+      { image: "linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.38))" },
+      { image: "linear-gradient(89.35deg, rgba(29,28,28,0.95) 27.2%, rgba(102,102,102,0) 99.4%)", hardLight: true },
+    ],
+  },
+  {
+    image: accommodation,
+    alt: "Student accommodation",
+    overlays: [{ image: "linear-gradient(180deg, rgba(0,0,0,0.64) 30.77%, rgba(102,102,102,0) 100%)" }],
+  },
+  {
+    image: sound,
+    alt: "Sound equipment",
+    overlays: [{ image: "linear-gradient(180deg, rgba(0,0,0,0.36) 26.84%, rgba(102,102,102,0.06) 100%)" }],
+  },
+  {
+    image: solar,
+    alt: "Solar panels",
+    overlays: [
+      { image: "linear-gradient(rgba(0,0,0,0.34), rgba(0,0,0,0.34))" },
+      { image: "linear-gradient(269.33deg, rgba(29,28,28,0.95) 71.84%, rgba(102,102,102,0.257) 99.38%)", hardLight: true },
+    ],
+  },
 ]
 
-const page = () => {
+// Outlined pill label, blue border
+const eyebrow =
+  "inline-flex h-[38px] shrink-0 items-center justify-center rounded-[26px] border border-[#00a8e8] text-[13px] font-medium uppercase tracking-[0.1em] text-[#d9d9d9]"
+
+export default function GivePage() {
   return (
-    <div className="w-full overflow-x-hidden">
+    <main className="w-full overflow-x-hidden bg-[#242323]">
 
-      {/* ===================== HERO (nav floats over it) ===================== */}
-      <section className="give-hero relative w-full min-h-[810px] flex flex-col">
+      <section className="relative w-full overflow-hidden">
 
-        {/* Background image (decorative) */}
-        <Image
-          src={heroBg}
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-        />
+        {/* ===================== BACKGROUND — top 1073px ===================== */}
+        <div aria-hidden className="absolute inset-x-0 top-0 h-full lg:h-[1073px]">
+          <Image src={heroBg} alt="" fill priority sizes="100vw" className="object-cover object-bottom" />
+          <div className="absolute inset-0" style={{ backgroundImage: heroOverlay }} />
+        </div>
 
-        {/* Dark overlay, fading to near-black toward the bottom */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/80 to-black" />
-
+        {/* Nav floats over the image, 36px from the top */}
         <SiteNav variant="transparent" />
 
-        {/* Content */}
-        <div className="relative z-10 flex-1 w-full px-6 md:px-24 pt-32 md:pt-40 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-start">
 
-          {/* LEFT — badge, heading, copy */}
-          <div className="flex flex-col gap-5 md:gap-6">
-            <span className="badge border border-[#4FA8E0] text-white text-[11px] font-medium tracking-widest rounded-full px-7 py-2 w-fit">
-              GIVE
-            </span>
+        {/* ===================== INTRO (left) + GIVING CARD (right) ===================== */}
+        {/* Content starts 201px from the top; 120px left margin, 95px right margin */}
+        <div className="relative flex flex-col gap-12 px-5 pt-32 lg:flex-row lg:items-start lg:justify-between lg:gap-[54px] lg:pt-[201px] lg:pr-[95px] lg:pl-[120px]">
 
-            <h1 className="font-serif text-white text-5xl sm:text-6xl md:text-7xl leading-[0.95]">
-              Your Gift
-              <br />
-              Changes Lives
-            </h1>
+          {/* Left — 666 wide */}
+          <div className="flex w-full max-w-[666px] flex-col items-start gap-[41px]">
+            <span className={`${eyebrow} w-[124px]`}>Give</span>
 
-            <p className="text-white/90 text-sm md:text-base leading-relaxed max-w-[520px]">
-              Every act of giving helps us make a lasting impact in our church
-              and community. Your generosity allows RCF to share God&apos;s love,
-              serve those in need, and build a place where faith continues to grow.
-            </p>
+            <div className="flex flex-col gap-[31px] text-white">
+              <h1 className="cap-trim max-w-[487px] font-serif text-[52px] leading-[54px] sm:text-[68px] sm:leading-[70px] lg:text-[86px] lg:leading-[86px]">
+                Your Gift Changes Lives
+              </h1>
+              <p className="cap-trim text-base leading-[26px] tracking-[0.05em] lg:text-[18px] lg:leading-[27px]">
+                Every act of giving helps us make a lasting impact in our church and community. Your generosity
+                allows RCF to share God&apos;s love, serve those in need, and build a place where faith continues
+                to grow.
+              </p>
+            </div>
           </div>
 
-          {/* RIGHT — giving details card (client component) */}
-          <div className="flex lg:justify-end">
-            <GiveCard />
-          </div>
-
+          {/* Right — 505 x 495 card */}
+          <GiveCard />
         </div>
 
-        {/* Other church needs label — sits at the bottom of the hero */}
-        <div className="relative z-10 px-6 md:px-24 pt-16 pb-12 md:pb-16">
-          <span className="badge inline-block border border-[#4FA8E0] text-white text-[11px] font-medium tracking-widest rounded-full px-6 py-2.5">
-            OTHER CHURCH NEEDS
-          </span>
+
+        {/* ===================== OTHER CHURCH NEEDS ===================== */}
+        <div className="relative px-5 pt-20 lg:pt-[184px] lg:pl-[120px]">
+          <span className={`${eyebrow} w-[235px]`}>Other church needs</span>
         </div>
 
-      </section>
+        {/* Photo strip — 405 x 440 tiles, 2px gaps, scrolls sideways (4th tile runs off-screen in the design) */}
+        <div className="relative mt-10 flex snap-x snap-mandatory gap-[2px] overflow-x-auto [scrollbar-width:none] lg:mt-[84px] [&::-webkit-scrollbar]:hidden">
+          {needs.map((item) => (
+            <div key={item.alt} className="relative h-[330px] w-[304px] shrink-0 snap-start overflow-hidden bg-[#d9d9d9] lg:h-[440px] lg:w-[405px]">
+              <Image src={item.image} alt={item.alt} fill sizes="405px" className="object-cover" />
+              {item.overlays.map((overlay, i) => (
+                <div
+                  key={i}
+                  aria-hidden
+                  className={`absolute inset-0 ${overlay.hardLight ? "mix-blend-hard-light" : ""}`}
+                  style={{ backgroundImage: overlay.image }}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
 
-
-      {/* ===================== OTHER CHURCH NEEDS — PHOTO STRIP ===================== */}
-      {/* 2 columns on mobile, 4 across on desktop. 1px black gaps act as dividers. */}
-      <section className="needs w-full bg-black grid grid-cols-2 lg:grid-cols-4 gap-px">
-        {needs.map((item) => (
-          <div key={item.alt} className="relative aspect-[3/4] lg:aspect-auto lg:h-[480px] overflow-hidden">
-            <Image
-              src={item.image}
-              alt={item.alt}
-              fill
-              sizes="(min-width: 1024px) 25vw, 50vw"
-              className="object-cover"
-            />
-          </div>
-        ))}
       </section>
 
 
       {/* ===================== FOOTER ===================== */}
       <SiteFooter />
 
-    </div>
+    </main>
   )
 }
-
-export default page

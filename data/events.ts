@@ -1,5 +1,5 @@
 import { StaticImageData } from 'next/image'
-import doctrineOfChrist from '@/public/Images/doctrine-of-christ.png'
+import doctrineOfChrist from '@/public/doctrine-of-christ.png'
 
 export type RCFEvent = {
   id: string

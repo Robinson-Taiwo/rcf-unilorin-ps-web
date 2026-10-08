@@ -3,7 +3,7 @@ import SiteFooter from "@/components/site-footer"
 import VisitCard from "@/components/visit-card"
 import BackButton from "@/components/back-button"
 import SermonCard, { type SermonCardProps } from "@/components/sermon-card"
-import theVeryLifeOfPrayer from "@/public/Images/the-very-life-of-prayer.png"
+import theVeryLifeOfPrayer from "@/public/the-very-life-of-prayer.png"
 
 // Placeholder data — nine identical entries, as in the design.
 // Replace with real sermons (or fetch from your CMS/DB later).

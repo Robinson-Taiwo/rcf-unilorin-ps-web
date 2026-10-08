@@ -2,7 +2,7 @@ import Image from "next/image"
 import SiteNav from "@/components/site-nav"
 import Marquee from "@/components/marquee"
 import CheckInForm from "@/components/check-in-form"
-import heroBg from "@/public/Images/rcf-hero.png"
+import heroBg from "@/public/rcf-hero.png"
 
 // Same photo treatment as the Give page: 71% black plus two fades
 const heroOverlay =

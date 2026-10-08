@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import logo from "@/public/Images/rcf-logo.png"
+import logo from "@/public/rcf-logo.png"
 
 const footerColumns = [
   { width: "w-[100px]", links: [{ label: "Home", href: "/" }, { label: "About us", href: "/about" }, { label: "Sermons", href: "/sermons" }] },

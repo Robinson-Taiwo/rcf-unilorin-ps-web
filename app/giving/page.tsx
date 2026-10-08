@@ -2,11 +2,11 @@ import Image, { type StaticImageData } from "next/image"
 import SiteNav from "@/components/site-nav"
 import SiteFooter from "@/components/site-footer"
 import GiveCard from "@/components/give-card"
-import heroBg from "@/public/Images/rcf-hero.png"
-import bus from "@/public/Images/give-bus.png"
-import accommodation from "@/public/Images/give-accomodation.png"
-import sound from "@/public/Images/give-sound.png"
-import solar from "@/public/Images/give-solar.png"
+import heroBg from "@/public/rcf-hero.png"
+import bus from "@/public/give-bus.png"
+import accommodation from "@/public/give-accomodation.png"
+import sound from "@/public/give-sound.png"
+import solar from "@/public/give-solar.png"
 
 // Hero photo overlay: 71% black plus the same fades used on the landing hero
 const heroOverlay =

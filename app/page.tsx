@@ -11,9 +11,9 @@ import PhotoCollage from "@/components/rcf/photo-collage"
 import TestimonyCarousel, { type Testimony } from "@/components/testimony-carousel"
 import { Eyebrow, body, cta, mobileTitle, responsiveCta } from "@/components/rcf/Ui"
 
-import heroBg from "@/public/Images/rcf-hero.png"
-import sermonPoster from "@/public/Images/the-very-life-of-prayer.png"
-import eventPoster from "@/public/Images/doctrine-of-christ.png"
+import heroBg from "@/public/rcf-hero.png"
+import sermonPoster from "@/public/the-very-life-of-prayer.png"
+import eventPoster from "@/public/doctrine-of-christ.png"
 
 /* ===================== OVERLAYS ===================== */
 
@@ -361,9 +361,8 @@ export default function Home() {
                     key={`${route.from}-${route.to}`}
                     type="button"
                     aria-pressed={route.selected}
-                    className={`flex h-20 w-full cursor-pointer flex-col items-start justify-center gap-[21px] rounded-[20px] border px-[10px] lg:h-[105px] lg:items-center ${
-                      route.selected ? "border-[#00a8e8] bg-[#00a8e8]/10" : "border-[#8a8d93] bg-[#8a8d93]/10"
-                    }`}
+                    className={`flex h-20 w-full cursor-pointer flex-col items-start justify-center gap-[21px] rounded-[20px] border px-[10px] lg:h-[105px] lg:items-center ${route.selected ? "border-[#00a8e8] bg-[#00a8e8]/10" : "border-[#8a8d93] bg-[#8a8d93]/10"
+                      }`}
                   >
                     <span className="flex w-full items-center justify-between lg:max-w-[380px]">
                       <span className="text-[16px] leading-[27px] font-semibold tracking-[-0.02em] text-[#1c1c1c] lg:text-[20px]">

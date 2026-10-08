@@ -6,9 +6,9 @@ import VisitCard from "@/components/rcf/visit-card"
 import SiteFooter from "@/components/rcf/site-footer"
 import ValuesAccordion from "@/components/values-accordion"
 
-import logo from "@/public/images/rcf-logo.png"
+import logo from "@/public/rcf-logo.png"
 import menu from "@/public/icons/hamburger.svg"
-import aboutHero from "@/public/images/about-hero.png"
+import aboutHero from "@/public/about-hero.png"
 
 export default function AboutPage() {
     return (

@@ -1,12 +1,12 @@
 import Image, { type StaticImageData } from "next/image"
 
-import raisedHands from "@/public/images/raised-hands-1.png"
-import holyHoly from "@/public/images/holy-holy.png"
-import bwHands from "@/public/images/bw-hands.png"
-import prayerCenter from "@/public/images/prayer-center.png"
-import crowdHands from "@/public/images/crowd-hands.png"
-import prayerBack from "@/public/images/prayer-back.png"
-import sanctuary from "@/public/images/sanctuary.png"
+import raisedHands from "@/public/raised-hands-1.png"
+import holyHoly from "@/public/holy-holy.png"
+import bwHands from "@/public/bw-hands.png"
+import prayerCenter from "@/public/prayer-center.png"
+import crowdHands from "@/public/crowd-hands.png"
+import prayerBack from "@/public/prayer-back.png"
+import sanctuary from "@/public/sanctuary.png"
 
 const collage = {
     farLeft: { src: raisedHands, alt: "Worship" },

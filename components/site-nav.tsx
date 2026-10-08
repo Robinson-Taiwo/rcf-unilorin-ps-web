@@ -1,6 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import logo from "@/public/Images/rcf-logo.png"
+import logo from "@/public/rcf-logo.png"
 import menu from "@/public/icons/hamburger.svg"
 
 // Mobile: 30px side padding, 44px logo, 24px menu button

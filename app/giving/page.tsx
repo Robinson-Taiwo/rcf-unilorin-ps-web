@@ -2,6 +2,7 @@ import Image, { type StaticImageData } from "next/image"
 import SiteNav from "@/components/site-nav"
 import SiteFooter from "@/components/site-footer"
 import GiveCard from "@/components/give-card"
+import { Pill, container, revealDelay, type } from "@/components/rcf/Ui"
 import heroBg from "@/public/rcf-hero.png"
 import bus from "@/public/give-bus.png"
 import accommodation from "@/public/give-accomodation.png"
@@ -44,64 +45,54 @@ const needs: { image: StaticImageData; alt: string; overlays: Overlay[] }[] = [
   },
 ]
 
-// Outlined pill label, blue border
-const eyebrow =
-  "inline-flex h-[38px] shrink-0 items-center justify-center rounded-[26px] border border-[#00a8e8] text-[13px] font-medium uppercase tracking-[0.1em] text-[#d9d9d9]"
-
 export default function GivePage() {
   return (
-    <main className="w-full overflow-x-hidden bg-[#242323]">
+    <main className="w-full overflow-x-clip bg-[#242323]">
 
-      <section className="relative w-full overflow-hidden">
+      <section className="relative w-full overflow-hidden pb-10 lg:pb-section">
 
-        {/* ===================== BACKGROUND — top 1073px ===================== */}
-        <div aria-hidden className="absolute inset-x-0 top-0 h-full lg:h-[1073px]">
-          <Image src={heroBg} alt="" fill priority sizes="100vw" className="object-cover object-bottom" />
+        {/* ===================== BACKGROUND — photo behind the top of the page ===================== */}
+        <div aria-hidden className="absolute inset-x-0 top-0 h-full overflow-hidden lg:h-[760px]">
+          <Image src={heroBg} alt="" fill priority sizes="100vw" className="animate-hero-zoom object-cover object-bottom" />
           <div className="absolute inset-0" style={{ backgroundImage: heroOverlay }} />
         </div>
 
-        {/* Nav floats over the image, 36px from the top */}
         <SiteNav variant="transparent" />
 
 
         {/* ===================== INTRO (left) + GIVING CARD (right) ===================== */}
-        {/* Content starts 201px from the top; 120px left margin, 95px right margin */}
-        <div className="relative flex flex-col gap-12 px-5 pt-32 lg:flex-row lg:items-start lg:justify-between lg:gap-[54px] lg:pt-[201px] lg:pr-[95px] lg:pl-[120px]">
-
-          {/* Left — 666 wide */}
-          <div className="flex w-full max-w-[666px] flex-col items-start gap-[41px]">
-            <span className={`${eyebrow} w-[124px]`}>Give</span>
-
-            <div className="flex flex-col gap-[31px] text-white">
-              <h1 className="cap-trim max-w-[487px] font-serif text-[52px] leading-[54px] sm:text-[68px] sm:leading-[70px] lg:text-[86px] lg:leading-[86px]">
-                Your Gift Changes Lives
-              </h1>
-              <p className="cap-trim text-base leading-[26px] tracking-[0.05em] lg:text-[18px] lg:leading-[27px]">
-                Every act of giving helps us make a lasting impact in our church and community. Your generosity
-                allows RCF to share God&apos;s love, serve those in need, and build a place where faith continues
-                to grow.
-              </p>
-            </div>
+        <div className={`${container} relative flex flex-col items-center gap-10 pt-[100px] lg:flex-row lg:items-center lg:justify-between lg:gap-14 lg:pt-36`}>
+          {/* Phones: centred (mobile frame). Desktop: left column. */}
+          {/* Phones: pill → 18px → heading → 12px → text (Figma). Desktop: 24px steps. */}
+          <div className="flex max-w-[520px] flex-col items-center text-center lg:items-start lg:text-left">
+            <Pill tone="blueOnDark" className="animate-fade-up [animation-delay:150ms]">Give</Pill>
+            <h1 className={`${type.title} mt-[18px] animate-fade-up text-white [animation-delay:250ms] lg:mt-6`}>Your Gift Changes Lives</h1>
+            <p className={`${type.body} mt-3 animate-fade-up text-white/90 [animation-delay:350ms] lg:mt-6 lg:text-white/80`}>
+              Every act of giving helps us make a lasting impact in our church and community. Your generosity
+              allows RCF to share God&apos;s love, serve those in need, and build a place where faith continues
+              to grow.
+            </p>
           </div>
 
-          {/* Right — 505 x 495 card */}
-          <GiveCard />
+          <div className="w-full max-w-[460px] animate-fade-up [animation-delay:450ms]">
+            <GiveCard />
+          </div>
         </div>
 
 
         {/* ===================== OTHER CHURCH NEEDS ===================== */}
-        <div className="relative px-5 pt-20 lg:pt-[184px] lg:pl-[120px]">
-          <span className={`${eyebrow} w-[235px]`}>Other church needs</span>
+        <div data-reveal className={`${container} relative flex justify-center pt-14 lg:justify-start lg:pt-24`}>
+          <Pill tone="blueOnDark">Other church needs</Pill>
         </div>
 
-        {/* Photo strip — 405 x 440 tiles, 2px gaps, scrolls sideways (4th tile runs off-screen in the design) */}
-        <div className="relative mt-10 flex snap-x snap-mandatory gap-[2px] overflow-x-auto [scrollbar-width:none] lg:mt-[84px] [&::-webkit-scrollbar]:hidden">
-          {needs.map((item) => (
-            <div key={item.alt} className="relative h-[330px] w-[304px] shrink-0 snap-start overflow-hidden bg-[#d9d9d9] lg:h-[440px] lg:w-[405px]">
-              <Image src={item.image} alt={item.alt} fill sizes="405px" className="object-cover" />
-              {item.overlays.map((overlay, i) => (
+        {/* Photo strip — scrolls sideways on phones; four equal tiles across the full width on desktop, 2px gaps */}
+        <div className="relative mt-7 flex snap-x snap-mandatory gap-[2px] overflow-x-auto [scrollbar-width:none] lg:grid lg:grid-cols-4 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
+          {needs.map((item, i) => (
+            <div key={item.alt} data-reveal style={revealDelay(i * 100)} className="group relative h-[300px] w-[260px] shrink-0 snap-start overflow-hidden bg-[#d9d9d9] lg:h-[clamp(280px,24vw,360px)] lg:w-auto">
+              <Image src={item.image} alt={item.alt} fill sizes="(min-width: 1024px) 25vw, 260px" className="object-cover transition-transform duration-[1.4s] ease-out-expo group-hover:scale-105" />
+              {item.overlays.map((overlay, j) => (
                 <div
-                  key={i}
+                  key={j}
                   aria-hidden
                   className={`absolute inset-0 ${overlay.hardLight ? "mix-blend-hard-light" : ""}`}
                   style={{ backgroundImage: overlay.image }}
@@ -114,7 +105,6 @@ export default function GivePage() {
       </section>
 
 
-      {/* ===================== FOOTER ===================== */}
       <SiteFooter />
 
     </main>

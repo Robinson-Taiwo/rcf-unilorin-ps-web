@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { segment, segmented } from "@/components/rcf/Ui"
 
 const tabs = [
-  { value: "offerings", label: "OFFERINGS" },
-  { value: "tithe", label: "TITHE" },
-  { value: "project", label: "PROJECT" },
+  { value: "offerings", label: "Offerings" },
+  { value: "tithe", label: "Tithe" },
+  { value: "project", label: "Project" },
 ] as const
 
 type Tab = (typeof tabs)[number]["value"]
@@ -29,19 +30,14 @@ const accounts: Record<Tab, { label: string; value: string }[]> = {
   ],
 }
 
-// 505 x 495 white card, blue border, 45px corners
+// Phones (mobile frame 461:265): 10px side padding, 26px top/bottom, 50px toggle, 24px gap, three 50px rows 10px apart.
+// Desktop (desktop frame): same card with a blue border (Figma 505 x 495).
 export default function GiveCard() {
   const [tab, setTab] = useState<Tab>("offerings")
 
   return (
-    <div className="flex w-full max-w-[505px] shrink-0 flex-col items-center justify-center gap-[34px] overflow-hidden rounded-[32px] border border-[#00a8e8] bg-white px-5 py-10 sm:px-10 lg:h-[495px] lg:rounded-[45px] lg:px-0 lg:py-0">
-
-      {/* Toggle — 425 x 66 track, three 129 x 45 tabs, 6px apart */}
-      <div
-        role="tablist"
-        aria-label="Giving type"
-        className="flex h-[66px] w-full max-w-[425px] items-center justify-center gap-[6px] rounded-[33px] bg-[#8a8d93]/20 px-[10px]"
-      >
+    <div className="flex w-full flex-col gap-6 rounded-[20px] border border-[#00a8e8] bg-white px-2.5 py-[26px] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)] sm:p-6 lg:gap-5 lg:rounded-[28px] lg:p-8">
+      <div role="tablist" aria-label="Giving type" className={segmented}>
         {tabs.map((t) => {
           const active = tab === t.value
           return (
@@ -51,9 +47,7 @@ export default function GiveCard() {
               role="tab"
               aria-selected={active}
               onClick={() => setTab(t.value)}
-              className={`flex h-[45px] w-full max-w-[129px] cursor-pointer items-center justify-center rounded-[25px] text-[14px] leading-[27px] font-medium tracking-[0.05em] transition-colors sm:text-[16px] ${
-                active ? "bg-[#1d1c1c] text-white" : "text-[#1c1c1c] hover:bg-black/5"
-              }`}
+              className={`${segment} ${active ? "bg-[#1d1c1c] text-white" : "text-[#1c1c1c] hover:bg-black/5"}`}
             >
               {t.label}
             </button>
@@ -61,19 +55,17 @@ export default function GiveCard() {
         })}
       </div>
 
-      {/* Account rows — 79 tall, 16px apart */}
-      <dl className="flex w-full max-w-[425px] flex-col gap-4">
+      <dl key={tab} className="flex animate-fade-in flex-col gap-2.5 lg:gap-3">
         {accounts[tab].map((row) => (
           <div
             key={row.label}
-            className="flex h-[79px] items-center justify-between gap-4 rounded-[25px] border-[0.5px] border-[#8a8d93] bg-[#e8e8e9] px-5 text-base leading-[27px] tracking-[0.05em] sm:text-[18px]"
+            className="flex h-[50px] items-center justify-between gap-4 rounded-[16px] border border-[#8a8d93]/50 bg-[#e8e8e9] px-4 text-[13px] tracking-[0.02em] lg:h-14 lg:rounded-[18px] lg:px-5 lg:text-[15px] lg:tracking-normal"
           >
             <dt className="font-light text-[#242323]/70">{row.label}</dt>
-            <dd className="text-right font-bold text-[#1c1c1c]">{row.value}</dd>
+            <dd className="text-right font-semibold text-[#1c1c1c]">{row.value}</dd>
           </div>
         ))}
       </dl>
-
     </div>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react"
+import { button } from "@/components/rcf/Ui"
 
 const CODE_LENGTH = 3
 
@@ -46,12 +47,12 @@ export default function CheckInForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-[53px] flex flex-col items-center gap-[38px]">
+    <form onSubmit={handleSubmit} className="mt-8 flex flex-col items-center gap-8">
 
-      {/* Code boxes — 107 x 113, 20px apart, in a 135-tall row */}
-      <div role="group" aria-label="Check-in code" className="flex h-[135px] items-center gap-3 sm:gap-5">
+      {/* Code boxes — 72 x 80 (Figma 107 x 113), 12px apart */}
+      <div role="group" aria-label="Check-in code" className="flex items-center gap-3">
         {chars.map((char, i) => (
-          <div key={i} className="relative h-[100px] w-[90px] sm:h-[113px] sm:w-[107px]">
+          <div key={i} className="relative h-20 w-[72px]">
             <input
               ref={(el) => {
                 inputs.current[i] = el
@@ -65,26 +66,21 @@ export default function CheckInForm() {
               autoComplete={i === 0 ? "one-time-code" : "off"}
               autoCapitalize="characters"
               aria-label={`Code character ${i + 1}`}
-              className="peer size-full rounded-[12px] border border-[#8a8d93] bg-[#e8e8e9] text-center text-[40px] font-semibold text-[#1c1c1c] caret-[#00a8e8] shadow-[0_4px_4px_rgba(0,0,0,0.08)] outline-none transition-shadow focus:border-[#00a8e8] focus:ring-2 focus:ring-[#00a8e8]/30"
+              className="peer size-full rounded-[12px] border border-[#8a8d93]/60 bg-[#e8e8e9] text-center text-[30px] font-semibold text-[#1c1c1c] caret-[#00a8e8] shadow-[0_4px_4px_rgba(0,0,0,0.06)] outline-none transition-[box-shadow,border-color,translate,background-color] duration-300 focus:-translate-y-0.5 focus:border-[#00a8e8] focus:bg-white focus:ring-4 focus:ring-[#00a8e8]/20"
             />
             {/* Dark dot shown in empty boxes (hidden while typing in that box) */}
             {!char && (
               <span
                 aria-hidden
-                className="pointer-events-none absolute top-1/2 left-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#4a4a4a] peer-focus:hidden"
+                className="pointer-events-none absolute top-1/2 left-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#4a4a4a] peer-focus:hidden"
               />
             )}
           </div>
         ))}
       </div>
 
-      {/* Submit — 248 x 54 */}
-      <button
-        type="submit"
-        disabled={!complete}
-        className="flex h-[54px] w-[248px] cursor-pointer items-center justify-center rounded-[10px] bg-[#00a8e8] text-[18px] leading-[27px] font-semibold tracking-[0.05em] text-[#18306e] transition-colors hover:bg-[#00a8e8]/90 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        SUBMIT CHECK-IN
+      <button type="submit" disabled={!complete} className={`${button.primary} w-full max-w-[240px]`}>
+        Submit check-in
       </button>
 
     </form>

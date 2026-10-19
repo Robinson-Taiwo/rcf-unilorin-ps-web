@@ -1,6 +1,6 @@
 import { Timer } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Eyebrow, body } from "@/components/rcf/Ui"
+import { Pill, body } from "@/components/rcf/Ui"
 
 const services = [
     { name: "Sunday Service", time: "7:20AM WAT" },
@@ -12,7 +12,7 @@ const services = [
 export default function VisitCard() {
     return (
         <div className="mx-auto flex w-full max-w-[1297px] flex-col gap-8 rounded-[32px] border border-[#8a8d93] px-6 py-10 lg:gap-[45px] lg:rounded-[55px] lg:px-[44px] lg:py-[56px]">
-            <Eyebrow width="w-[133px]">Visit us</Eyebrow>
+            <Pill>Visit us</Pill>
 
             <div className="flex flex-col gap-12 lg:flex-row lg:items-start lg:justify-between">
 

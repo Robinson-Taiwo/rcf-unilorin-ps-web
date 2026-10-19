@@ -4,6 +4,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Laptop/desktop screens tall enough to fit a whole screen-height layout (1024+ wide, 640+ tall visible).
+   Used by the Share Your Story page so the full form fits without scrolling. */
+@custom-variant fit (@media (min-width: 64rem) and (min-height: 40rem));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -163,4 +167,114 @@
 /* Fraunces settings used in the design */
 .font-serif {
   font-variation-settings: "SOFT" 0, "WONK" 1;
+}
+/* =====================================================================
+   DESKTOP SCALE
+   The Figma frames are 1440 wide, but copying their pixel sizes 1:1 made
+   everything oversized on real laptops (1280–1440 wide, ~800 tall).
+   These tokens keep the design's proportions but size them to the screen:
+   type grows fluidly between 1024px and 1440px and then stops.
+   Mobile classes are untouched — these are used behind `lg:`.
+   ===================================================================== */
+@theme {
+  /* One content width for every section: 1200px of content + 40px gutters */
+  --container-shell: 80rem;
+
+  /* Vertical rhythm between sections: 64px on phones → ~90px on desktop */
+  --spacing-section: clamp(4rem, 2rem + 4vw, 5.75rem);
+
+  /* Type scale — fluid from phone to 1440px wide, then fixed. One size per role, used on every page. */
+  --text-display: clamp(2.25rem, 1.5rem + 3vw, 4rem); /* 36 → 64  — home welcome headline (Figma 109) */
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.035em;
+  --text-title: clamp(2rem, 1.4rem + 2vw, 3rem); /* 32 → 48 — page titles (Figma mobile 32–36, desktop 65–86) */
+  --text-title--line-height: 1.08;
+  --text-title--letter-spacing: -0.025em;
+  --text-heading: clamp(1.75rem, 1.3rem + 1.4vw, 2.5rem); /* 28 → 40 — section headings (Figma 48–65) */
+  --text-heading--line-height: 1.12;
+  --text-heading--letter-spacing: -0.02em;
+  --text-subheading: clamp(1.125rem, 1rem + 0.35vw, 1.375rem); /* 18 → 22 — card / item titles (Figma 30–37) */
+  --text-subheading--line-height: 1.3;
+  --text-lead: clamp(1.125rem, 0.9rem + 0.7vw, 1.5rem); /* 18 → 24 — large serif paragraphs (Figma 32–42) */
+  --text-lead--line-height: 1.55;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-fade-up: fade-up 0.9s var(--ease-out-expo) both;
+  --animate-fade-in: fade-in 1.2s ease-out both;
+  --animate-hero-zoom: hero-zoom 2.4s var(--ease-out-expo) both;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(28px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes hero-zoom {
+    from { transform: scale(1.12); }
+    to { transform: scale(1); }
+  }
+}
+
+/* Smooth in-page scrolling; anchor targets land below the sticky nav (64px phones, 72px desktop) */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 4rem;
+}
+@media (min-width: 64rem) {
+  html { scroll-padding-top: 4.5rem; }
+}
+
+/* =====================================================================
+   MOTION — scroll reveal
+   Add data-reveal (or data-reveal="fade" | "scale" | "left" | "right")
+   to any element. <RevealObserver /> in the root layout adds
+   data-revealed when it scrolls into view. Stagger with --reveal-delay.
+   The `reveal-ready` class is set by a tiny script before first paint,
+   so content stays visible if JavaScript is off.
+   ===================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-ready [data-reveal] {
+    opacity: 0;
+    transform: translateY(32px);
+    /* translate / box-shadow / colours are listed so hover effects on revealed elements stay smooth */
+    transition:
+      opacity 0.9s var(--ease-out-expo),
+      transform 1.1s var(--ease-out-expo),
+      translate 0.5s var(--ease-out-expo),
+      box-shadow 0.5s ease,
+      background-color 0.3s ease,
+      border-color 0.3s ease;
+    transition-delay: var(--reveal-delay, 0ms);
+    will-change: opacity, transform;
+  }
+  .reveal-ready [data-reveal="fade"] { transform: none; }
+  .reveal-ready [data-reveal="scale"] { transform: scale(0.94); }
+  .reveal-ready [data-reveal="left"] { transform: translateX(-40px); }
+  .reveal-ready [data-reveal="right"] { transform: translateX(40px); }
+  .reveal-ready [data-reveal][data-revealed] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Animated underline for text links (nav, footer) */
+@utility link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.4s var(--ease-out-expo), color 0.3s;
+  &:hover, &[aria-current="page"] { background-size: 100% 1px; }
 }

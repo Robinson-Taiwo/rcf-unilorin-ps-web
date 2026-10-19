@@ -4,57 +4,54 @@ import VisitCard from "@/components/visit-card"
 import EventCard from "@/components/event-card"
 import BackButton from "@/components/back-button"
 import { events } from "@/data/events"
+import { container, revealDelay, type } from "@/components/rcf/Ui"
 
+// Phones (mobile frame 488:900): "UPCOMING EVENTS" title, then the cards stacked 16px apart. No back button,
+//   no intro paragraph, no "Visit us".
+// Desktop (desktop frame): back button, title with the intro paragraph beside it, 2-column grid, "Visit us".
 export default function EventsPage() {
   return (
-    <main className="w-full overflow-x-hidden bg-[#d9d9d9]">
+    <main className="w-full overflow-x-clip bg-[#d9d9d9]">
 
-      {/* ===================== NAV ===================== */}
       <SiteNav />
 
 
-      {/* ===================== HEADER + EVENTS GRID — 1204 wide ===================== */}
-      <section className="mx-auto w-full max-w-[1244px] px-5 pt-14 pb-16 lg:pt-[144px] lg:pb-[130px]">
+      {/* ===================== HEADER + EVENTS GRID ===================== */}
+      <section className={`${container} pt-7 pb-10 lg:pt-14 lg:pb-section`}>
+        <div data-reveal className="mb-8 hidden lg:block">
+          <BackButton href="/" />
+        </div>
 
-        <BackButton href="/" />
-
-        {/* Title (568 wide) + intro paragraph bottom-aligned, 15px apart */}
-        <div className="mt-[42px] flex flex-col gap-6 md:flex-row md:items-end md:gap-[15px]">
-          <h1 className="cap-trim shrink-0 font-serif text-[52px] leading-[56px] tracking-[-0.03em] text-[#1c1c1c] md:w-[400px] lg:w-[568px] lg:text-[77px] lg:leading-[83px]">
+        {/* Title + intro (intro on desktop only), bottom-aligned on one row */}
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+          <h1 data-reveal style={revealDelay(100)} className={`${type.title} shrink-0 text-[#1c1c1c]`}>
             UPCOMING
             <br />
             EVENTS
           </h1>
-
-          <p className="cap-trim min-w-0 flex-1 text-base leading-[26px] tracking-[0.05em] text-black lg:text-[18px] lg:leading-[27px]">
+          <p data-reveal style={revealDelay(200)} className={`${type.body} hidden max-w-[520px] text-[#242323]/80 lg:block`}>
             Stay in the loop with what&apos;s happening at RCF. From worship Sundays to varieties Sundays,
             there&apos;s always something to look forward to. See what&apos;s coming up.
           </p>
         </div>
 
-        {/* 2 columns — 24px column gap, 72px row gap */}
-        <div className="mt-14 grid grid-cols-1 gap-x-6 gap-y-14 md:grid-cols-2 lg:mt-[95px] lg:gap-y-[72px]">
-          {events.map((event) => (
-            <EventCard
-              key={event.id}
-              image={event.image}
-              date={event.listDate}
-              title={event.title}
-              detailsUrl={`/events/${event.id}`}
-            />
+        {/* Phones: one column, 16px apart (Figma). Tablet up: 2 columns */}
+        <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 md:gap-y-10 lg:mt-12 lg:gap-y-12">
+          {events.map((event, i) => (
+            <div key={event.id} data-reveal style={revealDelay((i % 2) * 120)}>
+              <EventCard image={event.image} date={event.listDate} shortDate={event.shortDate} title={event.title} detailsUrl={`/events/${event.id}`} />
+            </div>
           ))}
         </div>
-
       </section>
 
 
-      {/* ===================== VISIT US — 130px above and below ===================== */}
-      <section className="w-full px-5 pb-16 lg:pb-[130px]">
+      {/* ===================== VISIT US — desktop only ===================== */}
+      <section className={`${container} hidden pb-section lg:block`}>
         <VisitCard />
       </section>
 
 
-      {/* ===================== FOOTER ===================== */}
       <SiteFooter />
 
     </main>

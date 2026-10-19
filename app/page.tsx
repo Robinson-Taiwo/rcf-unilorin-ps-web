@@ -9,7 +9,7 @@ import EventCard from "@/components/event-card"
 import Marquee from "@/components/marquee"
 import PhotoCollage from "@/components/rcf/photo-collage"
 import TestimonyCarousel, { type Testimony } from "@/components/testimony-carousel"
-import { Eyebrow, body, cta, mobileTitle, responsiveCta } from "@/components/rcf/Ui"
+import { Pill, button, container, revealDelay, sectionY, stack, type } from "@/components/rcf/Ui"
 
 import heroBg from "@/public/rcf-hero.png"
 import sermonPoster from "@/public/the-very-life-of-prayer.png"
@@ -37,6 +37,7 @@ const events = Array.from({ length: 4 }, (_, i) => ({
   id: i + 1,
   image: eventPoster,
   date: "Thursday, January 8th-26TH, 2026",
+  shortDate: "January 8th - 14th, 2026",
   title: "Word & Prayer Conference",
   href: "/events",
 }))
@@ -80,33 +81,28 @@ function BlueGlow({ at, size = "1070px 1440px" }: { at: string; size?: string })
   )
 }
 
-// Mobile: everything centred, 32px apart. Desktop: paragraph left, button right
-function SectionHeader({
+// Section intro used by Sermons, Events and Testimonies.
+// Phones (mobile frames): centred pill, optional heading, paragraph. Desktop: pill on top, paragraph left, button right.
+function SectionIntro({
   eyebrow,
-  eyebrowWidth,
-  eyebrowSize = 13,
-  textClass,
-  mobileHeading,
+  heading,
   children,
   action,
 }: {
-  eyebrow: string
-  eyebrowWidth: string
-  eyebrowSize?: 10 | 12 | 13
-  textClass: string
-  mobileHeading?: ReactNode
+  eyebrow: ReactNode
+  heading?: ReactNode
   children: ReactNode
   action: ReactNode
 }) {
   return (
-    <div className="flex w-full flex-col items-center gap-8 text-center lg:items-stretch lg:gap-10 lg:text-left">
-      <div className="flex justify-center lg:justify-start">
-        <Eyebrow width={eyebrowWidth} mobileSize={eyebrowSize}>{eyebrow}</Eyebrow>
+    <div className={`flex w-full flex-col items-center text-center lg:items-start lg:text-left ${stack}`}>
+      <div data-reveal>
+        <Pill>{eyebrow}</Pill>
       </div>
-      {mobileHeading}
-      <div className="flex flex-col items-center gap-8 lg:flex-row lg:items-end lg:justify-between">
-        <p className={`cap-trim text-[#1c1c1c] ${body} ${textClass}`}>{children}</p>
-        {action}
+      {heading}
+      <div className="flex w-full flex-col items-center lg:flex-row lg:items-end lg:justify-between lg:gap-12">
+        <p data-reveal style={revealDelay(100)} className={`${type.body} max-w-[560px] text-[#1c1c1c]`}>{children}</p>
+        <div data-reveal style={revealDelay(200)} className="hidden lg:block">{action}</div>
       </div>
     </div>
   )
@@ -118,27 +114,17 @@ export default function Home() {
   return (
     <main className="bg-[#d9d9d9]">
 
-      {/* ===================== HERO — 800 tall on phones, 1036 on desktop ===================== */}
-      <section className="relative flex h-svh min-h-[640px] w-full flex-col justify-end pb-[109px] lg:h-[1036px] lg:min-h-0 lg:pb-[78px]">
-        <Image src={heroBg} alt="" fill priority sizes="100vw" className="object-cover object-center" />
+      {/* ===================== HERO — full screen height, capped at 860 on desktop ===================== */}
+      <section className="relative flex h-svh min-h-[560px] w-full flex-col justify-end overflow-hidden pb-24 lg:max-h-[860px] lg:pb-16">
+        <Image src={heroBg} alt="" fill priority sizes="100vw" className="animate-hero-zoom object-cover object-center" />
         <div aria-hidden className="absolute inset-0" style={{ backgroundImage: heroOverlay }} />
 
         <SiteNav variant="transparent" />
 
-        {/* Mobile: 100 x 40 buttons, 21px apart. Desktop: 182 x 58, 24px apart */}
-        <div className="relative flex justify-center gap-[21px] lg:gap-6">
-          <Link
-            href="/about"
-            className="flex h-10 w-[100px] items-center justify-center rounded-[10px] bg-[#00a8e8] text-[14px] leading-none font-bold tracking-[0.05em] text-[#d9d9d9] hover:bg-[#00a8e8]/90 lg:h-[58px] lg:w-[182px] lg:text-[18px] lg:leading-[27px] lg:font-medium lg:text-[#18306e]"
-          >
-            ABOUT US
-          </Link>
-          <Link
-            href="/give"
-            className="flex h-10 w-[100px] items-center justify-center rounded-[10px] border border-[#00a8e8] text-[14px] leading-none font-bold tracking-[0.05em] text-[#d9d9d9] hover:bg-[#00a8e8]/10 lg:h-[58px] lg:w-[182px] lg:text-[18px] lg:leading-[27px] lg:font-normal"
-          >
-            PARTNER
-          </Link>
+        {/* Phones: 120 x 40 (Figma 100 x 40). Desktop: 168 x 44 (Figma 182 x 58). */}
+        <div className="relative flex justify-center gap-3 px-[30px] lg:gap-4">
+          <Link href="/about" className={`${button.primary} w-[120px] animate-fade-up [animation-delay:500ms] max-lg:text-[#d9d9d9] lg:w-[168px]`}>About us</Link>
+          <Link href="/giving" className={`${button.outline} w-[120px] animate-fade-up [animation-delay:650ms] lg:w-[168px]`}>Partner</Link>
         </div>
       </section>
 
@@ -148,21 +134,26 @@ export default function Home() {
 
 
       {/* ===================== WELCOME ===================== */}
-      <section className="relative isolate w-full overflow-hidden bg-[#00a8e8] p-[30px] text-center lg:px-5 lg:pt-[100px] lg:pb-[122px]">
+      <section className={`relative isolate w-full overflow-hidden bg-[#00a8e8] text-center ${sectionY}`}>
         <BlueGlow size="1440px 1070px" at="calc(100% + 653px) 720px" />
 
-        <div className="relative flex flex-col items-center">
-          <Eyebrow width="w-[155px] lg:w-[178px]" mobileSize={12} thin>Welcome to RCF</Eyebrow>
+        <div className={`${container} relative flex flex-col items-center ${stack}`}>
+          <div data-reveal>
+            <Pill>Welcome to RCF</Pill>
+          </div>
 
-          {/* Mobile: 36px, wraps naturally. Desktop: 109px, one word per line */}
-          <h1 className={`cap-trim mt-8 text-[#1c1c1c] ${mobileTitle} md:text-[64px] md:leading-[1.1] lg:mt-5 lg:text-[109px] lg:leading-[107px] lg:tracking-[-0.06em]`}>
-            THE <br className="hidden lg:block" />
+          {/* Phones: one sentence that wraps. Desktop: one word per line (as designed) */}
+          <h1 data-reveal style={revealDelay(120)} className={`${type.display} text-[#1c1c1c]`}>
+            THE
+            <br className="hidden lg:block" />
+            <span className="lg:hidden"> GATHERING OF THE MOST </span>
+            <span className="hidden lg:inline"> </span>
             JOYOUS <br className="hidden lg:block" />
             PEOPLE <br className="hidden lg:block" />
             ON CAMPUS
           </h1>
 
-          <p className={`cap-trim mt-8 max-w-[714px] text-[#1c1c1c] lg:mt-[43px] lg:text-black ${body}`}>
+          <p data-reveal style={revealDelay(240)} className={`${type.body} max-w-[560px] text-[#1c1c1c]`}>
             We are a student fellowship in Unilorin committed to aggressive evangelism, deep discipleship, and
             building people who carry the gospel into every place they go.
           </p>
@@ -171,150 +162,142 @@ export default function Home() {
 
 
       {/* ===================== VISIT US / SERVICE TIME ===================== */}
-      <section className="w-full bg-[#d9d9d9] lg:px-5 lg:py-[85px]">
-        <VisitCard />
+      <section className={`w-full bg-[#d9d9d9] ${sectionY}`}>
+        <div className={container}>
+          <VisitCard />
+        </div>
       </section>
 
 
       {/* ===================== ABOUT US ===================== */}
-      <section className="relative isolate w-full overflow-hidden bg-[#00a8e8] py-[30px] lg:pt-[168px] lg:pb-[175px]">
+      <section className={`relative isolate w-full overflow-hidden bg-[#00a8e8] ${sectionY}`}>
         <BlueGlow at="50% calc(100% + 506px)" />
 
-        <div className="relative flex flex-col items-center">
-          <Eyebrow width="w-[155px] lg:w-[172px]" mobileSize={12}>About us</Eyebrow>
+        <div className={`relative flex flex-col items-center ${stack}`}>
+          <div data-reveal>
+            <Pill>About us</Pill>
+          </div>
 
-          <div className="mt-8 w-full lg:mt-[46px]">
+          <div className="w-full lg:mt-4">
             <PhotoCollage />
           </div>
 
-          {/* Mobile: Inter 16, 296 wide. Desktop: Fraunces 42, 1190 wide */}
-          <p className="cap-trim mt-8 max-w-[296px] text-center text-base leading-[1.3] tracking-[-0.02em] text-[#1c1c1c] md:max-w-[600px] lg:mt-[87px] lg:max-w-[1190px] lg:px-5 lg:font-serif lg:text-[42px] lg:leading-normal lg:tracking-normal lg:text-black">
-            RCF Unilorin PS also known as the Success Centre is the campus fellowship of Christ The Redeemer
-            Ministries, RCCG. We believe success goes beyond grades: it&apos;s growing in faith, sharpening
-            character, excelling academically, and living out God&apos;s purpose on campus. Built on Aggressive
-            Evangelism, we carry the Gospel beyond our walls and into every corner of student life.
-          </p>
+          <div className={`${container} flex flex-col items-center text-center ${stack} lg:mt-6`}>
+            {/* Phones and desktop frames use different copy here */}
+            <p data-reveal className={`${type.body} text-[#1c1c1c] lg:hidden`}>
+              The Redeemed Christian Fellowship, University of Ilorin, Permanent site, (RCFUNILORINPS) serves as the
+              campus fellowship arm under the Christ The Redeemer Ministries by the Redeemed Christian Church of God.
+              Known as the Success Centre, we&apos;re a community of students growing in our relationship with God while
+              pursuing academic excellence and preparing for the future.
+              <br />
+              <br />
+              Our fellowship is built on Aggressive Evangelism taking the Gospel beyond the walls of our fellowship and
+              boldly representing sharing the message of Christ with our campuses, communities, and generation. Through
+              prayer, worship, the study of God&apos;s Word, academic support, mentorship, shared moments, fun activities
+              and genuine fellowship, we create a space that fosters growth spiritually, academically, and personally.
+            </p>
+            <p data-reveal className={`${type.lead} hidden max-w-[880px] text-black lg:block`}>
+              RCF Unilorin PS also known as the Success Centre is the campus fellowship of Christ The Redeemer
+              Ministries, RCCG. We believe success goes beyond grades: it&apos;s growing in faith, sharpening
+              character, excelling academically, and living out God&apos;s purpose on campus. Built on Aggressive
+              Evangelism, we carry the Gospel beyond our walls and into every corner of student life.
+            </p>
 
-          <Link
-            href="/about"
-            className={`${responsiveCta} mt-8 lg:mt-[80px] lg:w-[233px] lg:bg-[#00a8e8] lg:text-[#18306e] lg:hover:bg-[#00a8e8]/90`}
-          >
-            MORE ABOUT US
-          </Link>
-        </div>
-      </section>
-
-
-      {/* ===================== FEATURED SERMONS ===================== */}
-      <section className="w-full bg-[#d9d9d9] p-[30px] lg:px-0 lg:pt-[151px] lg:pb-[156px]">
-        <div className="mx-auto flex w-full max-w-[1242px] flex-col items-center lg:items-stretch lg:px-5">
-          <SectionHeader
-            eyebrow="Featured sermons"
-            eyebrowWidth="w-[214px]"
-            textClass="max-w-[299px] lg:min-h-[70px] lg:max-w-[618px]"
-            action={
-              <Link href="/sermons" className={`${cta} hidden w-[225px] items-center justify-center bg-[#00a8e8] font-medium text-[#1c1c1c] hover:bg-[#00a8e8]/90 lg:flex`}>
-                SEE ALL SERMONS
-              </Link>
-            }
-          >
-            There&apos;s a Word for you, Press play and discover messages of faith, hope, and truth to encourage
-            you wherever you are in your walk with God.
-          </SectionHeader>
-
-          {/* Mobile: stacked, 16px apart. Desktop: 2 x 2, 20px / 50px gaps */}
-          <div className="mt-8 grid w-full grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2 lg:mt-16 lg:gap-y-[50px]">
-            {sermons.map((sermon) => (
-              <SermonCard key={sermon.id} {...sermon} />
-            ))}
-          </div>
-
-          <Link href="/sermons" className={`${responsiveCta} mt-8 lg:hidden`}>SEE MORE SERMONS</Link>
-        </div>
-      </section>
-
-
-      {/* ===================== UPCOMING EVENTS — grey on mobile, blue on desktop ===================== */}
-      <section className="relative isolate w-full overflow-hidden bg-[#d9d9d9] p-[30px] lg:bg-[#00a8e8] lg:px-0 lg:pt-[83px] lg:pb-[68px]">
-        <BlueGlow at="50% calc(100% + 723px)" />
-
-        <div className="relative mx-auto flex w-full max-w-[1244px] flex-col items-center lg:items-stretch lg:px-5">
-          <SectionHeader
-            eyebrow="Upcoming events"
-            eyebrowWidth="w-[214px]"
-            textClass="max-w-[299px] lg:min-h-[98px] lg:max-w-[692px]"
-            action={
-              <Link href="/events" className={`${cta} hidden w-[225px] items-center justify-center bg-[#1d1c1c] font-medium text-white hover:bg-[#1d1c1c]/90 lg:flex`}>
-                SEE ALL EVENTS
-              </Link>
-            }
-          >
-            Stay in the loop with what&apos;s happening at RCF. From worship Sundays, to varieties Sundays
-            there&apos;s always something to look forward to.
-            <br />
-            See what&apos;s coming up.
-          </SectionHeader>
-
-          <div className="mt-8 grid w-full grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 lg:mt-[57px] lg:gap-y-10">
-            {events.map((event) => (
-              <EventCard key={event.id} image={event.image} date={event.date} title={event.title} detailsUrl={event.href} />
-            ))}
-          </div>
-
-          <Link href="/events" className={`${responsiveCta} mt-8 lg:hidden`}>VIEW MORE EVENTS</Link>
-        </div>
-      </section>
-
-
-      {/* ===================== GIVE ===================== */}
-      <section className="relative w-full overflow-hidden p-[30px] lg:pt-[290px] lg:pb-[278px]">
-        <Image src={heroBg} alt="" fill sizes="100vw" className="object-cover object-center" />
-        <div aria-hidden className="absolute inset-0 bg-black/20 lg:hidden" />
-        <div aria-hidden className="absolute inset-0 hidden lg:block" style={{ backgroundImage: giveOverlay }} />
-
-        <div className="relative mx-auto flex max-w-[617px] flex-col items-center gap-8 px-[30px] py-[25px] text-center lg:gap-[52px] lg:p-0">
-          {/* Mobile: blue border. Desktop: grey border */}
-          <span className="inline-flex h-[38px] w-[155px] items-center justify-center rounded-[26px] border border-[#00a8e8] text-[10px] font-medium uppercase tracking-[0.05em] text-[#d9d9d9] lg:h-10 lg:w-[124px] lg:border-[#d9d9d9] lg:text-[13px] lg:tracking-[0.1em]">
-            Give
-          </span>
-
-          <div className="flex flex-col items-center gap-6 lg:gap-[34px]">
-            <div className="flex flex-col items-center gap-6 text-[#d9d9d9] lg:gap-[35px] lg:text-white">
-              <h2 className={`cap-trim max-w-[267px] uppercase ${mobileTitle} lg:max-w-none lg:text-[65px] lg:leading-normal lg:font-normal lg:tracking-normal lg:normal-case`}>
-                Support the Mission
-              </h2>
-              <p className={`cap-trim opacity-75 lg:min-h-[88px] lg:opacity-100 ${body}`}>
-                Be Part of the Mission.
-                <br />
-                Your support helps us turn ideas into action, serve people, and make a lasting impact in our
-                fellowship and beyond.
-              </p>
-            </div>
-
-            <Link href="/give" className={`${cta} hidden w-[225px] items-center justify-center bg-[#00a8e8] font-medium text-[#18306e] hover:bg-[#00a8e8]/90 lg:flex`}>
-              MAKE AN IMPACT
+            <Link href="/about" data-reveal style={revealDelay(120)} className={`${button.navy} lg:bg-[#00a8e8] lg:text-[#18306e] lg:hover:bg-[#2bbbf0]`}>
+              More about us
             </Link>
           </div>
         </div>
       </section>
 
 
+      {/* ===================== FEATURED SERMONS ===================== */}
+      <section className={`w-full bg-[#d9d9d9] ${sectionY}`}>
+        <div className={`${container} flex flex-col items-center lg:items-stretch`}>
+          <SectionIntro
+            eyebrow="Featured sermons"
+            action={<Link href="/sermons" className={button.primary}>See all sermons</Link>}
+          >
+            There&apos;s a Word for you, Press play and discover messages of faith, hope, and truth to encourage
+            you wherever you are in your walk with God.
+          </SectionIntro>
+
+          {/* Phones: stacked. Tablet up: 2 x 2 (as designed) */}
+          <div className="mt-7 grid w-full grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2 lg:mt-12 lg:gap-y-12">
+            {sermons.map((sermon, i) => (
+              <div key={sermon.id} data-reveal style={revealDelay((i % 2) * 120)}>
+                <SermonCard {...sermon} />
+              </div>
+            ))}
+          </div>
+
+          <Link href="/sermons" className={`${button.navy} mt-8 lg:hidden`}>See more sermons</Link>
+        </div>
+      </section>
+
+
+      {/* ===================== UPCOMING EVENTS — grey on phones, blue on desktop (as designed) ===================== */}
+      <section className={`relative isolate w-full overflow-hidden bg-[#d9d9d9] lg:bg-[#00a8e8] ${sectionY}`}>
+        <BlueGlow at="50% calc(100% + 723px)" />
+
+        <div className={`${container} relative flex flex-col items-center lg:items-stretch`}>
+          <SectionIntro
+            eyebrow="Upcoming events"
+            action={<Link href="/events" className={button.dark}>See all events</Link>}
+          >
+            Stay in the loop with what&apos;s happening at RCF. From worship Sundays, to varieties Sundays
+            there&apos;s always something to look forward to. See what&apos;s coming up.
+          </SectionIntro>
+
+          <div className="mt-7 grid w-full grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2 lg:mt-12 lg:gap-y-12">
+            {events.map((event, i) => (
+              <div key={event.id} data-reveal style={revealDelay((i % 2) * 120)}>
+                <EventCard image={event.image} date={event.date} shortDate={event.shortDate} title={event.title} detailsUrl={event.href} />
+              </div>
+            ))}
+          </div>
+
+          <Link href="/events" className={`${button.navy} mt-8 lg:hidden`}>View more events</Link>
+        </div>
+      </section>
+
+
+      {/* ===================== GIVE ===================== */}
+      <section className="relative w-full overflow-hidden py-20 lg:py-32">
+        <Image src={heroBg} alt="" fill sizes="100vw" className="object-cover object-center" />
+        <div aria-hidden className="absolute inset-0 bg-black/30 lg:hidden" />
+        <div aria-hidden className="absolute inset-0 hidden lg:block" style={{ backgroundImage: giveOverlay }} />
+
+        <div className={`${container} relative flex flex-col items-center text-center text-[#d9d9d9] lg:text-white ${stack}`}>
+          <div data-reveal>
+            <Pill tone="light" mobileTone="blueOnDark">Give</Pill>
+          </div>
+          <h2 data-reveal style={revealDelay(100)} className={`${type.heading} max-w-[560px]`}>
+            <span className="lg:hidden">SUPPORT THE MISSION</span>
+            <span className="hidden lg:inline">Support the Mission</span>
+          </h2>
+          <p data-reveal style={revealDelay(200)} className={`${type.body} max-w-[520px] opacity-80 lg:opacity-90`}>
+            Be Part of the Mission.
+            <br />
+            Your support helps us turn ideas into action, serve people, and make a lasting impact in our
+            fellowship and beyond.
+          </p>
+          <div data-reveal style={revealDelay(300)} className="hidden lg:block">
+            <Link href="/giving" className={button.primary}>Make an impact</Link>
+          </div>
+        </div>
+      </section>
+
+
       {/* ===================== TESTIMONY / PRAYERS ===================== */}
-      <section className="relative isolate w-full overflow-hidden bg-[#00a8e8] p-[30px] lg:px-0 lg:pt-[84px] lg:pb-[160px]">
+      <section className={`relative isolate w-full overflow-hidden bg-[#00a8e8] ${sectionY}`}>
         <BlueGlow at="50% calc(100% + 451px)" />
 
-        <div className="relative mx-auto flex w-full max-w-[1246px] flex-col items-center lg:items-stretch lg:px-5">
-          <SectionHeader
-            eyebrow="Testimony/Prayers"
-            eyebrowWidth="w-[155px] lg:w-[233px]"
-            eyebrowSize={10}
-            textClass="lg:min-h-[98px] lg:max-w-[692px]"
-            mobileHeading={<h2 className={`cap-trim text-[#1c1c1c] lg:hidden ${mobileTitle}`}>Look what God is doing!</h2>}
-            action={
-              <Link href="/share-your-story" className={`${cta} hidden w-[225px] items-center justify-center bg-[#1d1c1c] font-medium text-white hover:bg-[#1d1c1c]/90 lg:flex`}>
-                SHARE YOURS
-              </Link>
-            }
+        <div className={`${container} relative flex flex-col items-center lg:items-stretch`}>
+          <SectionIntro
+            eyebrow={<><span className="lg:hidden">Testimonies/Prayers</span><span className="hidden lg:inline">Testimony/Prayers</span></>}
+            heading={<h2 data-reveal style={revealDelay(50)} className={`${type.heading} text-[#1c1c1c] lg:hidden`}>Look what God is doing!</h2>}
+            action={<Link href="/testimony" className={button.dark}>Share yours</Link>}
           >
             <span className="hidden lg:inline">
               Look What God Is Doing!
@@ -322,69 +305,70 @@ export default function Home() {
             </span>
             Real people. Real stories. Real testimonies of God&apos;s faithfulness. Come see how He&apos;s been
             moving, answering prayers, changing lives, and making a way.
-          </SectionHeader>
+          </SectionIntro>
 
-          <div className="mt-8 w-full lg:mt-[77px]">
+          <div className="mt-7 w-full lg:mt-12">
             <TestimonyCarousel items={testimonies} />
           </div>
 
-          <Link href="/share-your-story" className={`${responsiveCta} mt-8 lg:hidden`}>SHARE YOUR TESTIMONY</Link>
+          <Link href="/testimony" className={`${button.navy} mt-8 lg:hidden`}>Share your testimony</Link>
         </div>
       </section>
 
 
-      {/* ===================== TRANSPORTATION — full-bleed dark on mobile, rounded panel on desktop ===================== */}
-      <section className="w-full bg-[#1d1c1c] lg:bg-[#d9d9d9] lg:px-5 lg:py-[99px]">
-        <div className="mx-auto flex max-w-[1312px] flex-col items-center gap-8 bg-[#1d1c1c] p-[30px] lg:h-[626px] lg:flex-row lg:justify-center lg:gap-[95px] lg:rounded-[45px] lg:py-0">
+      {/* ===================== TRANSPORTATION — full-bleed dark on phones, rounded panel on desktop ===================== */}
+      <section id="transport" className={`w-full bg-[#1d1c1c] lg:bg-[#d9d9d9] ${sectionY}`}>
+        <div className={container}>
+          <div data-reveal="scale" className="flex flex-col items-center gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-14 lg:rounded-[28px] lg:bg-[#1d1c1c] lg:p-14">
 
-          <div className="flex w-full max-w-[617px] flex-col items-center gap-8 text-center text-[#d9d9d9] lg:items-start lg:gap-[37px] lg:text-left">
-            <Eyebrow width="w-[155px] lg:w-[233px]" tone="light" tall mobileSize={10}>Transportation</Eyebrow>
-            <div className="flex flex-col gap-8 lg:gap-[37px]">
-              <h2 className={`cap-trim ${mobileTitle} lg:text-[65px] lg:leading-normal lg:font-normal lg:tracking-normal`}>
-                Reserve your seat on the bus.
+            <div className={`flex max-w-[480px] flex-col items-center text-center text-[#d9d9d9] lg:items-start lg:text-left ${stack}`}>
+              <div data-reveal style={revealDelay(150)}>
+                <Pill tone="light">Transportation</Pill>
+              </div>
+              <h2 data-reveal style={revealDelay(250)} className={type.heading}>
+                Reserve your seat on the bus<span className="hidden lg:inline">.</span>
               </h2>
-              <p className={`cap-trim lg:min-h-[94px] ${body}`}>
+              <p data-reveal style={revealDelay(350)} className={`${type.body} text-[#d9d9d9]/75`}>
                 One route, two directions — school to church before service, church back to school after. Book
                 your slot ahead so you know you have a seat. No payment online; you pay on the bus.
               </p>
             </div>
-          </div>
 
-          {/* Mobile: 300-wide white card. Desktop: 513 x 498 grey card with navy border */}
-          <div className="flex w-full max-w-[300px] flex-col items-center justify-center gap-5 rounded-[20px] bg-white px-[15px] py-5 lg:h-[498px] lg:max-w-[513px] lg:gap-[28px] lg:rounded-[45px] lg:border lg:border-[#18306e] lg:bg-[#d9d9d9] lg:px-5 lg:py-0">
-            <div className="flex w-full max-w-[434px] flex-col gap-[25px]">
-              <h3 className="cap-trim hidden font-serif text-[22px] font-semibold text-[#1c1c1c] lg:block">Sunday, 20 September</h3>
+            {/* Booking card — white on phones (Figma 300 x 285), grey with a navy border on desktop (Figma 513 x 498) */}
+            <div data-reveal="right" style={revealDelay(300)} className="flex w-full max-w-[440px] flex-col gap-5 rounded-[20px] bg-white p-5 lg:rounded-[24px] lg:border lg:border-[#18306e] lg:bg-[#d9d9d9] lg:p-7">
+              <h3 className="cap-trim hidden font-serif text-subheading font-semibold text-[#1c1c1c] lg:block">Sunday, 20 September</h3>
 
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-3 lg:gap-3.5">
                 {routes.map((route) => (
                   <button
                     key={`${route.from}-${route.to}`}
                     type="button"
                     aria-pressed={route.selected}
-                    className={`flex h-20 w-full cursor-pointer flex-col items-start justify-center gap-[21px] rounded-[20px] border px-[10px] lg:h-[105px] lg:items-center ${route.selected ? "border-[#00a8e8] bg-[#00a8e8]/10" : "border-[#8a8d93] bg-[#8a8d93]/10"
-                      }`}
+                    className={`flex w-full cursor-pointer flex-col gap-3 rounded-[14px] border px-4 py-4 text-left transition-[border-color,background-color,translate] duration-300 hover:-translate-y-0.5 hover:border-[#00a8e8] lg:gap-2.5 ${
+                      route.selected ? "border-[#00a8e8] bg-[#00a8e8]/10" : "border-[#8a8d93]/60 bg-[#8a8d93]/10"
+                    }`}
                   >
-                    <span className="flex w-full items-center justify-between lg:max-w-[380px]">
-                      <span className="text-[16px] leading-[27px] font-semibold tracking-[-0.02em] text-[#1c1c1c] lg:text-[20px]">
+                    <span className="flex w-full items-center justify-between gap-3">
+                      <span className="text-[15px] leading-none font-semibold tracking-[-0.01em] text-[#1c1c1c] lg:text-base">
                         {route.from} → {route.to}
                       </span>
-                      <span className="flex h-6 w-[92px] items-center justify-center rounded-[25px] bg-[#5c8e13] text-[10px] font-medium uppercase tracking-[-0.02em] text-[#d9d9d9]">
+                      <span className="inline-flex h-6 items-center rounded-full bg-[#5c8e13] px-2.5 text-[10px] leading-none font-semibold uppercase tracking-[0.02em] text-[#d9d9d9]">
                         {route.seatsLeft} seats left
                       </span>
                     </span>
-                    <span className="w-full text-left text-[11px] leading-none font-medium tracking-[0.03em] text-[#242323]/60 lg:max-w-[380px] lg:text-[15px] lg:leading-normal lg:tracking-[0.1em]">
+                    <span className="text-[12px] leading-none text-[#242323]/65 lg:text-[13px]">
                       Departs {route.time} · {route.pickup}
                     </span>
                   </button>
                 ))}
               </div>
+
+              <p className="text-[12px] leading-[1.5] text-[#242323]/65 lg:text-[13px]">
+                You&apos;ll get a confirmation message once your slot is reserved. Please arrive 10 minutes before departure.
+              </p>
             </div>
 
-            <p className="cap-trim w-full max-w-[260px] text-[12px] leading-[1.2] tracking-[-0.02em] text-[#242323]/60 lg:max-w-[418px] lg:text-[16px] lg:leading-[27px] lg:tracking-[0.05em]">
-              You&apos;ll get a confirmation message once your slot is reserved. Please arrive 10 minutes before departure.
-            </p>
           </div>
-
         </div>
       </section>
 

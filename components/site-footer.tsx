@@ -1,10 +1,22 @@
 import Image from "next/image"
 import Link from "next/link"
 import logo from "@/public/rcf-logo.png"
+import { container } from "@/components/rcf/Ui"
 
+// Figma: two columns of three links. Prayers/Testimonies and Check-in are added so every page is reachable.
 const footerColumns = [
-  { width: "w-[100px]", links: [{ label: "Home", href: "/" }, { label: "About us", href: "/about" }, { label: "Sermons", href: "/sermons" }] },
-  { width: "w-[118px]", links: [{ label: "Events", href: "/events" }, { label: "Give", href: "/give" }, { label: "Transport", href: "/transport" }] },
+  [
+    { label: "Home", href: "/" },
+    { label: "About us", href: "/about" },
+    { label: "Sermons", href: "/sermons" },
+    { label: "Events", href: "/events" },
+  ],
+  [
+    { label: "Give", href: "/giving" },
+    { label: "Transport", href: "/#transport" },
+    { label: "Testimonies", href: "/testimony" },
+    { label: "Check-in", href: "/check-in" },
+  ],
 ]
 
 const socials = [
@@ -14,45 +26,46 @@ const socials = [
   { label: "YouTube", href: "#" },
 ]
 
-// Mobile: 30px padding, 38px logo + 24px name, links centred at 16px, socials at 10px
-// Desktop: 401 tall, logo/name left, links right, socials spread, 0.5px divider
+// Same footer on every page.
+// Phones (mobile frame): 38px logo + name, two centred link columns, socials spread, full-width divider.
+// Desktop (desktop frame): logo + name left, link columns right, socials spread, thin divider.
 export default function SiteFooter() {
   return (
-    <footer className="flex w-full flex-col items-center gap-7 overflow-hidden bg-[#1d1c1c] p-[30px] lg:gap-[56px] lg:px-0 lg:py-[100px]">
+    <footer className="w-full overflow-hidden bg-[#1d1c1c] pt-11 pb-10 text-white lg:pt-16 lg:pb-12">
+      <div className={`${container} flex flex-col gap-8 lg:gap-12`}>
 
-      <div className="flex w-full max-w-[1385px] flex-col gap-8 py-[10px] lg:flex-row lg:items-start lg:justify-between lg:gap-10 lg:px-5 lg:py-0">
-        <div className="flex items-center gap-[23px] px-5 py-[10px] lg:p-0">
-          <Image src={logo} alt="RCF Unilorin PS logo" className="size-[38px] lg:size-[66px]" />
-          <span className="cap-trim font-serif text-[24px] leading-[27px] tracking-[-0.02em] text-white lg:text-[42px]">
-            RCF UNILORIN PS
-          </span>
+        <div className="flex flex-col items-center gap-8 lg:flex-row lg:items-start lg:justify-between">
+          <Link href="/" className="flex items-center gap-4 transition-opacity hover:opacity-80">
+            <Image src={logo} alt="" className="size-[38px] lg:size-11" />
+            <span className="font-serif text-[22px] leading-none tracking-[-0.02em] lg:text-[24px]">RCF UNILORIN PS</span>
+          </Link>
+
+          <nav aria-label="Footer" className="flex gap-8 sm:gap-12 lg:gap-16">
+            {footerColumns.map((column, i) => (
+              <ul key={i} className="flex min-w-[100px] flex-col gap-4 text-center lg:min-w-0 lg:text-left">
+                {column.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="text-[14px] leading-none font-medium uppercase tracking-[0.06em] text-white/90 transition-colors hover:text-[#00a8e8] lg:text-[13px] lg:tracking-[0.1em]">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ))}
+          </nav>
         </div>
 
-        <nav className="flex justify-center gap-[33px] text-[16px] leading-[27px] tracking-[0.05em] text-white lg:justify-start lg:text-[18px]">
-          {footerColumns.map((column, i) => (
-            <ul key={i} className={`flex flex-col gap-5 text-center lg:text-left ${column.width}`}>
-              {column.links.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="cap-trim block uppercase hover:text-[#00a8e8]">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+        <div className="flex justify-between gap-4 text-[10px] font-semibold uppercase tracking-[0.12em] lg:text-[11px] lg:tracking-[0.14em]">
+          {socials.map((social) => (
+            <Link key={social.label} href={social.href} className="link-underline pb-1 transition-colors hover:text-[#00a8e8]">
+              {social.label}
+            </Link>
           ))}
-        </nav>
+        </div>
       </div>
 
-      <div className="flex w-full max-w-[1382px] justify-between gap-4 text-[10px] font-semibold uppercase tracking-[0.1em] text-white lg:gap-6 lg:px-5 lg:text-[13px]">
-        {socials.map((social) => (
-          <Link key={social.label} href={social.href} className="hover:text-[#00a8e8]">
-            {social.label}
-          </Link>
-        ))}
-      </div>
-
-      {/* Divider runs edge to edge (past the 30px padding on mobile) */}
-      <div className="h-px w-[calc(100%+60px)] shrink-0 bg-[#d9d9d9] lg:h-[0.5px] lg:w-full" />
+      {/* Divider — full width on phones, as designed */}
+      <div className="mt-8 h-px w-full bg-[#d9d9d9]/40 lg:mx-auto lg:mt-12 lg:w-[calc(100%-5rem)] lg:max-w-[75rem] lg:bg-[#d9d9d9]/30" />
     </footer>
   )
 }

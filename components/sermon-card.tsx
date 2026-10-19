@@ -1,5 +1,6 @@
 import Image, { type StaticImageData } from "next/image"
 import { Download } from "lucide-react"
+import { chip } from "@/components/rcf/Ui"
 
 export type SermonCardProps = {
   image: StaticImageData | string
@@ -7,54 +8,48 @@ export type SermonCardProps = {
   title: string
   date: string
   audioUrl: string
-  // Desktop size: "lg" = landing (589 x 617), "md" = Sermons page (421 x 440)
+  // Desktop image shape: "lg" = landing page (Figma 589 x 617), "md" = Sermons page (Figma 421 x 440)
   size?: "lg" | "md"
 }
 
 const sizes = {
-  lg: { image: "lg:aspect-[589/617]", pill: "lg:bottom-[37px] lg:left-5", title: "lg:text-[37px]", sizes: "(min-width: 1024px) 589px, (min-width: 768px) 50vw, 100vw" },
-  md: { image: "lg:aspect-[421/440]", pill: "lg:bottom-[19px] lg:left-4", title: "lg:text-[28px]", sizes: "(min-width: 1024px) 421px, (min-width: 768px) 50vw, 100vw" },
+  lg: { image: "lg:aspect-[589/617]", sizes: "(min-width: 1280px) 590px, (min-width: 768px) 50vw, 100vw" },
+  md: { image: "lg:aspect-[421/440]", sizes: "(min-width: 1280px) 384px, (min-width: 640px) 50vw, 100vw" },
 }
 
-// Mobile: 300 x 270 image (10px corners, 20% overlay), then title, date, blue download button
-// Desktop: square-cornered image with 40% overlay + duration pill, title, then download pill | date
+// Phones (mobile frame): 300 x 270 poster, title, date, small blue "Download audio" tag.
+// Desktop (desktop frame): poster with a duration pill, title, then a dark download pill with the date on the right.
 export default function SermonCard({ image, duration, title, date, audioUrl, size = "lg" }: SermonCardProps) {
   const s = sizes[size]
 
   return (
-    <article className="flex flex-col gap-3 lg:gap-[28px]">
-
-      <div className={`relative aspect-[300/270] w-full overflow-hidden rounded-[10px] lg:rounded-none ${s.image}`}>
-        <Image src={image} alt={title} fill sizes={s.sizes} className="object-cover object-top" />
-        <div className="absolute inset-0 bg-black/20 lg:bg-black/40" />
-        <span
-          className={`absolute hidden h-[31px] w-[124px] items-center justify-center rounded-[20px] bg-[#d9d9d9] text-[10px] font-bold uppercase tracking-[0.1em] text-[#1c1c1c] lg:flex ${s.pill}`}
-        >
+    <article className="group flex flex-col gap-3 lg:gap-4">
+      <div className={`relative aspect-[10/9] w-full overflow-hidden rounded-[10px] bg-[#1d1c1c] lg:rounded-[14px] ${s.image}`}>
+        <Image src={image} alt={title} fill sizes={s.sizes} className="object-cover object-top transition-transform duration-[1.2s] ease-out-expo group-hover:scale-[1.05]" />
+        <div className="absolute inset-0 bg-black/20 transition-colors duration-500 lg:bg-black/35 lg:group-hover:bg-black/20" />
+        <span className="absolute bottom-4 left-4 hidden h-7 items-center rounded-full bg-[#d9d9d9] px-3 text-[10px] leading-none font-bold uppercase tracking-[0.1em] text-[#1c1c1c] lg:inline-flex">
           {duration}
         </span>
       </div>
 
-      <div className="flex flex-col items-start gap-3 lg:gap-[31px]">
-        <h3 className={`cap-trim font-serif text-[18px] font-bold tracking-[-0.02em] text-[#1c1c1c] lg:font-semibold lg:tracking-normal ${s.title}`}>
-          {title}
-        </h3>
+      <h3 className="cap-trim font-serif text-[18px] leading-[1.25] font-bold tracking-[-0.02em] text-[#1c1c1c] lg:text-subheading lg:font-semibold">
+        {title}
+      </h3>
 
-        {/* Mobile: date above button. Desktop: button left, date right */}
-        <div className="flex w-full flex-col items-start gap-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
-          <span className="text-[10px] leading-none font-medium uppercase tracking-[-0.02em] text-[#1c1c1c]/75 lg:order-2 lg:text-[14px] lg:font-bold lg:tracking-normal lg:text-[#1c1c1c]">
-            {date}
-          </span>
-          <a
-            href={audioUrl}
-            download
-            className="flex shrink-0 items-center justify-center gap-[2px] rounded-[3px] bg-[#00a8e8] p-[5px] text-[10px] leading-[1.2] uppercase tracking-[-0.03em] text-[#18306e] hover:bg-[#00a8e8]/90 lg:order-1 lg:h-9 lg:w-[157px] lg:rounded-[20px] lg:bg-[#1d1c1c] lg:p-0 lg:font-medium lg:tracking-normal lg:text-[#d9d9d9] lg:hover:bg-black"
-          >
-            <Download className="size-4 lg:size-[13px]" />
-            Download audio
-          </a>
-        </div>
+      {/* Phones: date above the tag. Desktop: download pill left, date right. */}
+      <div className="flex flex-col items-start gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between lg:gap-x-3 lg:gap-y-2">
+        <span className="text-[11px] leading-none font-medium uppercase tracking-[0.02em] text-[#1c1c1c]/75 lg:order-2 lg:text-[13px] lg:normal-case lg:tracking-normal lg:text-[#1c1c1c]/70">
+          {date}
+        </span>
+        <a
+          href={audioUrl}
+          download
+          className={`${chip} bg-[#00a8e8] text-[#18306e] hover:bg-[#2bbbf0] lg:order-1 lg:bg-[#1d1c1c] lg:text-[#d9d9d9] lg:hover:bg-[#00a8e8] lg:hover:text-[#18306e]`}
+        >
+          <Download className="size-3.5" />
+          Download audio
+        </a>
       </div>
-
     </article>
   )
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import RevealObserver from "@/components/reveal-observer";
 
 
 
@@ -40,8 +41,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         inter.variable,
         fraunces.variable
       )}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        {/* Turns on scroll-reveal styles before first paint (no flash); content stays visible without JS */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('reveal-ready')" }} />
+      </head>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <RevealObserver />
+      </body>
     </html>
   );
 }

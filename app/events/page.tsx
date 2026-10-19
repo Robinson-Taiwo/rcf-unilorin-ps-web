@@ -3,13 +3,17 @@ import SiteFooter from "@/components/site-footer"
 import VisitCard from "@/components/visit-card"
 import EventCard from "@/components/event-card"
 import BackButton from "@/components/back-button"
-import { events } from "@/data/events"
+import { getEvents } from "@/lib/content"
 import { container, revealDelay, type } from "@/components/rcf/Ui"
 
 // Phones (mobile frame 488:900): "UPCOMING EVENTS" title, then the cards stacked 16px apart. No back button,
 //   no intro paragraph, no "Visit us".
 // Desktop (desktop frame): back button, title with the intro paragraph beside it, 2-column grid, "Visit us".
-export default function EventsPage() {
+// Published events from the admin; refresh every minute
+export const revalidate = 60
+
+export default async function EventsPage() {
+  const events = await getEvents()
   return (
     <main className="w-full overflow-x-clip bg-[#d9d9d9]">
 
@@ -35,11 +39,13 @@ export default function EventsPage() {
           </p>
         </div>
 
+        {events.length === 0 && <p className="mt-12 text-[15px] text-[#242323]/70">No upcoming events right now. Check back soon.</p>}
+
         {/* Phones: one column, 16px apart (Figma). Tablet up: 2 columns */}
         <div className="mt-12 grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 md:gap-y-10 lg:mt-12 lg:gap-y-12">
           {events.map((event, i) => (
             <div key={event.id} data-reveal style={revealDelay((i % 2) * 120)}>
-              <EventCard image={event.image} date={event.listDate} shortDate={event.shortDate} title={event.title} detailsUrl={`/events/${event.id}`} />
+              <EventCard image={event.image} date={event.date} shortDate={event.shortDate} title={event.title} detailsUrl={`/events/${event.id}`} />
             </div>
           ))}
         </div>

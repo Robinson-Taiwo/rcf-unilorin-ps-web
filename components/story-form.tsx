@@ -3,6 +3,7 @@
 import { useState, type FormEvent, type ReactNode } from "react"
 import { Check } from "lucide-react"
 import { button, field, fieldHeight, fieldLabel, segment, segmented } from "@/components/rcf/Ui"
+import { supabasePublic } from "@/lib/supabase/public"
 
 type StoryType = "testimony" | "prayer"
 
@@ -23,11 +24,26 @@ export default function StoryForm({ intro, footnote }: { intro: ReactNode; footn
   const [anonymous, setAnonymous] = useState(false)
   const [message, setMessage] = useState("")
   const [contact, setContact] = useState("")
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle")
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    // Move your existing submit logic here. Everything you need:
-    // { type, name, anonymous, message, contact }
+    if (!message.trim() || status === "sending") return
+    setStatus("sending")
+    // Goes to the admin review queue; nothing is published until an admin approves it
+    const { error } = await supabasePublic().from("submissions").insert({
+      type,
+      name: name.trim() || null,
+      anonymous,
+      message: message.trim(),
+      contact: contact.trim() || null,
+    })
+    if (error) return setStatus("error")
+    setStatus("sent")
+    setName("")
+    setAnonymous(false)
+    setMessage("")
+    setContact("")
   }
 
   const isTestimony = type === "testimony"
@@ -51,7 +67,10 @@ export default function StoryForm({ intro, footnote }: { intro: ReactNode; footn
               key={tab.value}
               type="button"
               aria-pressed={active}
-              onClick={() => setType(tab.value)}
+              onClick={() => {
+                setType(tab.value)
+                if (status !== "sending") setStatus("idle")
+              }}
               className={`${segment} ${active ? "bg-[#00a8e8] text-white" : "text-[#00a8e8] hover:bg-[#00a8e8]/10"}`}
             >
               {tab.label}
@@ -98,7 +117,10 @@ export default function StoryForm({ intro, footnote }: { intro: ReactNode; footn
             required
             maxLength={MAX_LENGTH}
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={(e) => {
+              setMessage(e.target.value)
+              if (status === "sent" || status === "error") setStatus("idle")
+            }}
             placeholder={isTestimony ? "Enter your testimony" : "Enter your prayer point"}
             className={`${field} h-[140px] resize-none py-3 leading-[1.6] lg:h-40 fit:h-auto fit:max-h-[240px] fit:min-h-[72px] fit:flex-1`}
           />
@@ -123,7 +145,21 @@ export default function StoryForm({ intro, footnote }: { intro: ReactNode; footn
           />
         </div>
 
-        <button type="submit" className={`${button.primary} w-full`}>Submit</button>
+        <div className="flex shrink-0 flex-col gap-3">
+          <button type="submit" disabled={status === "sending"} className={`${button.primary} w-full`}>
+            {status === "sending" ? "Sending…" : "Submit"}
+          </button>
+          {status === "sent" && (
+            <p role="status" className="animate-fade-in text-center text-[13px] font-medium text-[#3c8a2e]">
+              {isTestimony ? "Thank you! Your testimony has been sent for review." : "Thank you. We'll be praying with you."}
+            </p>
+          )}
+          {status === "error" && (
+            <p role="alert" className="animate-fade-in text-center text-[13px] font-medium text-[#d32f2f]">
+              Something went wrong. Please check your connection and try again.
+            </p>
+          )}
+        </div>
       </form>
 
       {/* Footnote */}

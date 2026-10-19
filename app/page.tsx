@@ -8,12 +8,15 @@ import SermonCard from "@/components/sermon-card"
 import EventCard from "@/components/event-card"
 import Marquee from "@/components/marquee"
 import PhotoCollage from "@/components/rcf/photo-collage"
-import TestimonyCarousel, { type Testimony } from "@/components/testimony-carousel"
+import TestimonyCarousel from "@/components/testimony-carousel"
+import BookingCard from "@/components/booking-card"
+import { getEvents, getNextTrips, getSermons, getTestimonies } from "@/lib/content"
+
+// Sermons, events, testimonies and trips come from the admin; refresh every minute
+export const revalidate = 60
 import { Pill, button, container, revealDelay, sectionY, stack, type } from "@/components/rcf/Ui"
 
 import heroBg from "@/public/rcf-hero.png"
-import sermonPoster from "@/public/the-very-life-of-prayer.png"
-import eventPoster from "@/public/doctrine-of-christ.png"
 
 /* ===================== OVERLAYS ===================== */
 
@@ -22,51 +25,6 @@ const heroOverlay =
 const giveOverlay =
   "linear-gradient(180deg, rgba(102,102,102,0.03) 0%, #000 100%), linear-gradient(0.21deg, rgba(102,102,102,0) 10.3%, rgba(0,0,0,0.6) 96.9%)"
 
-/* ===================== DATA ===================== */
-
-const sermons = Array.from({ length: 4 }, (_, i) => ({
-  id: i + 1,
-  image: sermonPoster,
-  duration: "1hr 30mins",
-  title: "The Weight of a Calling",
-  date: "August 5, 2025",
-  audioUrl: "#",
-}))
-
-const events = Array.from({ length: 4 }, (_, i) => ({
-  id: i + 1,
-  image: eventPoster,
-  date: "Thursday, January 8th-26TH, 2026",
-  shortDate: "January 8th - 14th, 2026",
-  title: "Word & Prayer Conference",
-  href: "/events",
-}))
-
-const testimonies: Testimony[] = [
-  {
-    label: "Testimony",
-    quote: "I struggled with my results for two sessions. After joining the prayer unit and staying consistent, I made my best grades this semester. God is faithful.",
-    by: "A 300L student",
-    dark: false,
-  },
-  {
-    label: "Prayer point",
-    quote: "Please pray for my final year project defense coming up next month for wisdom and a sound mind as I prepare.",
-    by: "Submitted anonymously",
-    dark: true,
-  },
-  {
-    label: "Testimony",
-    quote: "I came for one service as a visitor and found a family. A year later, I'm serving in the choir and growing more than I imagined.",
-    by: "A 300L student",
-    dark: false,
-  },
-]
-
-const routes = [
-  { from: "School", to: "Church", seatsLeft: 12, time: "8:15 AM", pickup: "Frisch laundry", selected: true },
-  { from: "Church", to: "School", seatsLeft: 12, time: "8:15 AM", pickup: "Frisch laundry", selected: false },
-]
 
 /* ===================== BUILDING BLOCKS ===================== */
 
@@ -110,7 +68,8 @@ function SectionIntro({
 
 /* ===================== PAGE ===================== */
 
-export default function Home() {
+export default async function Home() {
+  const [sermons, events, testimonies, trips] = await Promise.all([getSermons(4), getEvents(4), getTestimonies(6), getNextTrips()])
   return (
     <main className="bg-[#d9d9d9]">
 
@@ -223,10 +182,11 @@ export default function Home() {
           </SectionIntro>
 
           {/* Phones: stacked. Tablet up: 2 x 2 (as designed) */}
+          {sermons.length === 0 && <p className="mt-10 text-center text-[15px] text-[#242323]/70">New sermons will appear here soon.</p>}
           <div className="mt-7 grid w-full grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2 lg:mt-12 lg:gap-y-12">
             {sermons.map((sermon, i) => (
               <div key={sermon.id} data-reveal style={revealDelay((i % 2) * 120)}>
-                <SermonCard {...sermon} />
+                <SermonCard image={sermon.image} duration={sermon.duration} title={sermon.title} date={sermon.date} audioUrl={sermon.audioUrl} />
               </div>
             ))}
           </div>
@@ -249,10 +209,11 @@ export default function Home() {
             there&apos;s always something to look forward to. See what&apos;s coming up.
           </SectionIntro>
 
+          {events.length === 0 && <p className="mt-10 text-center text-[15px] text-[#242323]/70 lg:text-[#1c1c1c]/80">No upcoming events right now. Check back soon.</p>}
           <div className="mt-7 grid w-full grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-2 lg:mt-12 lg:gap-y-12">
             {events.map((event, i) => (
               <div key={event.id} data-reveal style={revealDelay((i % 2) * 120)}>
-                <EventCard image={event.image} date={event.date} shortDate={event.shortDate} title={event.title} detailsUrl={event.href} />
+                <EventCard image={event.image} date={event.date} shortDate={event.shortDate} title={event.title} detailsUrl={`/events/${event.id}`} />
               </div>
             ))}
           </div>
@@ -290,7 +251,7 @@ export default function Home() {
 
 
       {/* ===================== TESTIMONY / PRAYERS ===================== */}
-      <section className={`relative isolate w-full overflow-hidden bg-[#00a8e8] ${sectionY}`}>
+      <section id="testimonies" className={`relative isolate w-full overflow-hidden bg-[#00a8e8] ${sectionY}`}>
         <BlueGlow at="50% calc(100% + 451px)" />
 
         <div className={`${container} relative flex flex-col items-center lg:items-stretch`}>
@@ -308,7 +269,11 @@ export default function Home() {
           </SectionIntro>
 
           <div className="mt-7 w-full lg:mt-12">
-            <TestimonyCarousel items={testimonies} />
+            {testimonies.length > 0 ? (
+              <TestimonyCarousel items={testimonies.map((t, i) => ({ label: "Testimony", quote: t.quote, by: t.by, dark: i % 2 === 1 }))} />
+            ) : (
+              <p className="text-center text-[15px] text-[#1c1c1c]/80">Be the first to share what God has done.</p>
+            )}
           </div>
 
           <Link href="/testimony" className={`${button.navy} mt-8 lg:hidden`}>Share your testimony</Link>
@@ -335,38 +300,7 @@ export default function Home() {
             </div>
 
             {/* Booking card — white on phones (Figma 300 x 285), grey with a navy border on desktop (Figma 513 x 498) */}
-            <div data-reveal="right" style={revealDelay(300)} className="flex w-full max-w-[440px] flex-col gap-5 rounded-[20px] bg-white p-5 lg:rounded-[24px] lg:border lg:border-[#18306e] lg:bg-[#d9d9d9] lg:p-7">
-              <h3 className="cap-trim hidden font-serif text-subheading font-semibold text-[#1c1c1c] lg:block">Sunday, 20 September</h3>
-
-              <div className="flex flex-col gap-3 lg:gap-3.5">
-                {routes.map((route) => (
-                  <button
-                    key={`${route.from}-${route.to}`}
-                    type="button"
-                    aria-pressed={route.selected}
-                    className={`flex w-full cursor-pointer flex-col gap-3 rounded-[14px] border px-4 py-4 text-left transition-[border-color,background-color,translate] duration-300 hover:-translate-y-0.5 hover:border-[#00a8e8] lg:gap-2.5 ${
-                      route.selected ? "border-[#00a8e8] bg-[#00a8e8]/10" : "border-[#8a8d93]/60 bg-[#8a8d93]/10"
-                    }`}
-                  >
-                    <span className="flex w-full items-center justify-between gap-3">
-                      <span className="text-[15px] leading-none font-semibold tracking-[-0.01em] text-[#1c1c1c] lg:text-base">
-                        {route.from} → {route.to}
-                      </span>
-                      <span className="inline-flex h-6 items-center rounded-full bg-[#5c8e13] px-2.5 text-[10px] leading-none font-semibold uppercase tracking-[0.02em] text-[#d9d9d9]">
-                        {route.seatsLeft} seats left
-                      </span>
-                    </span>
-                    <span className="text-[12px] leading-none text-[#242323]/65 lg:text-[13px]">
-                      Departs {route.time} · {route.pickup}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              <p className="text-[12px] leading-[1.5] text-[#242323]/65 lg:text-[13px]">
-                You&apos;ll get a confirmation message once your slot is reserved. Please arrive 10 minutes before departure.
-              </p>
-            </div>
+            <BookingCard trips={trips} />
 
           </div>
         </div>

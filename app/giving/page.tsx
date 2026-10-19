@@ -1,13 +1,14 @@
-import Image, { type StaticImageData } from "next/image"
+import Image from "next/image"
 import SiteNav from "@/components/site-nav"
 import SiteFooter from "@/components/site-footer"
 import GiveCard from "@/components/give-card"
 import { Pill, container, revealDelay, type } from "@/components/rcf/Ui"
 import heroBg from "@/public/rcf-hero.png"
-import bus from "@/public/give-bus.png"
-import accommodation from "@/public/give-accomodation.png"
-import sound from "@/public/give-sound.png"
-import solar from "@/public/give-solar.png"
+import { needImage, type GivingAccount, type GivingTab } from "@/lib/giving"
+import { supabasePublic } from "@/lib/supabase/public"
+
+// Account details and needs come from the admin; refresh every minute
+export const revalidate = 60
 
 // Hero photo overlay: 71% black plus the same fades used on the landing hero
 const heroOverlay =
@@ -16,36 +17,37 @@ const heroOverlay =
 // "Other church needs" strip — each photo has its own overlay in Figma
 type Overlay = { image: string; hardLight?: boolean }
 
-const needs: { image: StaticImageData; alt: string; overlays: Overlay[] }[] = [
-  {
-    image: bus,
-    alt: "Church bus",
-    overlays: [
-      { image: "linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.38))" },
-      { image: "linear-gradient(89.35deg, rgba(29,28,28,0.95) 27.2%, rgba(102,102,102,0) 99.4%)", hardLight: true },
-    ],
-  },
-  {
-    image: accommodation,
-    alt: "Student accommodation",
-    overlays: [{ image: "linear-gradient(180deg, rgba(0,0,0,0.64) 30.77%, rgba(102,102,102,0) 100%)" }],
-  },
-  {
-    image: sound,
-    alt: "Sound equipment",
-    overlays: [{ image: "linear-gradient(180deg, rgba(0,0,0,0.36) 26.84%, rgba(102,102,102,0.06) 100%)" }],
-  },
-  {
-    image: solar,
-    alt: "Solar panels",
-    overlays: [
-      { image: "linear-gradient(rgba(0,0,0,0.34), rgba(0,0,0,0.34))" },
-      { image: "linear-gradient(269.33deg, rgba(29,28,28,0.95) 71.84%, rgba(102,102,102,0.257) 99.38%)", hardLight: true },
-    ],
-  },
+// Overlays cycle through the four Figma tiles
+const overlays: Overlay[][] = [
+  [
+    { image: "linear-gradient(rgba(0,0,0,0.38), rgba(0,0,0,0.38))" },
+    { image: "linear-gradient(89.35deg, rgba(29,28,28,0.95) 27.2%, rgba(102,102,102,0) 99.4%)", hardLight: true },
+  ],
+  [{ image: "linear-gradient(180deg, rgba(0,0,0,0.64) 30.77%, rgba(102,102,102,0) 100%)" }],
+  [{ image: "linear-gradient(180deg, rgba(0,0,0,0.36) 26.84%, rgba(102,102,102,0.06) 100%)" }],
+  [
+    { image: "linear-gradient(rgba(0,0,0,0.34), rgba(0,0,0,0.34))" },
+    { image: "linear-gradient(269.33deg, rgba(29,28,28,0.95) 71.84%, rgba(102,102,102,0.257) 99.38%)", hardLight: true },
+  ],
 ]
 
-export default function GivePage() {
+async function load() {
+  try {
+    const sb = supabasePublic()
+    const [acc, needs] = await Promise.all([
+      sb.from("giving_accounts").select("kind, bank, account_name, account_number"),
+      sb.from("church_needs").select("id, name, image_path").eq("visible", true).order("sort"),
+    ])
+    const accounts: Partial<Record<GivingTab, GivingAccount>> = {}
+    for (const a of acc.data ?? []) accounts[a.kind as GivingTab] = { bank: a.bank, accountName: a.account_name, accountNumber: a.account_number }
+    return { accounts, needs: (needs.data ?? []) as { id: string; name: string; image_path: string | null }[] }
+  } catch {
+    return { accounts: {}, needs: [] }
+  }
+}
+
+export default async function GivePage() {
+  const { accounts, needs } = await load()
   return (
     <main className="w-full overflow-x-clip bg-[#242323]">
 
@@ -75,12 +77,13 @@ export default function GivePage() {
           </div>
 
           <div className="w-full max-w-[460px] animate-fade-up [animation-delay:450ms]">
-            <GiveCard />
+            <GiveCard accounts={accounts} />
           </div>
         </div>
 
 
         {/* ===================== OTHER CHURCH NEEDS ===================== */}
+        {needs.length > 0 && (<>
         <div data-reveal className={`${container} relative flex justify-center pt-14 lg:justify-start lg:pt-24`}>
           <Pill tone="blueOnDark">Other church needs</Pill>
         </div>
@@ -88,9 +91,9 @@ export default function GivePage() {
         {/* Photo strip — scrolls sideways on phones; four equal tiles across the full width on desktop, 2px gaps */}
         <div className="relative mt-7 flex snap-x snap-mandatory gap-[2px] overflow-x-auto [scrollbar-width:none] lg:grid lg:grid-cols-4 lg:overflow-visible [&::-webkit-scrollbar]:hidden">
           {needs.map((item, i) => (
-            <div key={item.alt} data-reveal style={revealDelay(i * 100)} className="group relative h-[300px] w-[260px] shrink-0 snap-start overflow-hidden bg-[#d9d9d9] lg:h-[clamp(280px,24vw,360px)] lg:w-auto">
-              <Image src={item.image} alt={item.alt} fill sizes="(min-width: 1024px) 25vw, 260px" className="object-cover transition-transform duration-[1.4s] ease-out-expo group-hover:scale-105" />
-              {item.overlays.map((overlay, j) => (
+            <div key={item.id} data-reveal style={revealDelay(i * 100)} className="group relative h-[300px] w-[260px] shrink-0 snap-start overflow-hidden bg-[#d9d9d9] lg:h-[clamp(280px,24vw,360px)] lg:w-auto">
+              <Image src={needImage(item)} alt={item.name} fill sizes="(min-width: 1024px) 25vw, 260px" className="object-cover transition-transform duration-[1.4s] ease-out-expo group-hover:scale-105" />
+              {overlays[i % 4].map((overlay, j) => (
                 <div
                   key={j}
                   aria-hidden
@@ -101,6 +104,7 @@ export default function GivePage() {
             </div>
           ))}
         </div>
+        </>)}
 
       </section>
 

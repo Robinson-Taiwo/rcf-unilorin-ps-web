@@ -2,18 +2,35 @@
 
 import { useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react"
 import { button } from "@/components/rcf/Ui"
+import { supabasePublic } from "@/lib/supabase/public"
 
 const CODE_LENGTH = 3
 
 // Keep letters and digits only, uppercase
 const clean = (value: string) => value.replace(/[^0-9a-z]/gi, "").toUpperCase()
 
+// One anonymous id per phone, so each phone counts once per service
+function deviceId() {
+  try {
+    let id = localStorage.getItem("rcf-device")
+    if (!id) {
+      id = crypto.randomUUID()
+      localStorage.setItem("rcf-device", id)
+    }
+    return id
+  } catch {
+    return crypto.randomUUID()
+  }
+}
+
 export default function CheckInForm() {
   const [chars, setChars] = useState<string[]>(Array(CODE_LENGTH).fill(""))
   const inputs = useRef<(HTMLInputElement | null)[]>([])
   const complete = chars.every(Boolean)
+  const [status, setStatus] = useState<"idle" | "sending" | "done" | "wrong" | "error">("idle")
 
   function setChar(index: number, value: string) {
+    if (status === "wrong" || status === "error") setStatus("idle")
     const char = clean(value).slice(-1)
     setChars((prev) => {
       const next = [...prev]
@@ -41,9 +58,11 @@ export default function CheckInForm() {
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!complete) return
-    const code = chars.join("")
-    // TODO: send `code` to your check-in endpoint
+    if (!complete || status === "sending" || status === "done") return
+    setStatus("sending")
+    const { data, error } = await supabasePublic().rpc("check_in", { p_code: chars.join(""), p_device_id: deviceId() })
+    if (error) return setStatus("error")
+    setStatus(data ? "done" : "wrong")
   }
 
   return (
@@ -63,6 +82,7 @@ export default function CheckInForm() {
               onPaste={handlePaste}
               onFocus={(e) => e.target.select()}
               maxLength={1}
+              disabled={status === "done"}
               autoComplete={i === 0 ? "one-time-code" : "off"}
               autoCapitalize="characters"
               aria-label={`Code character ${i + 1}`}
@@ -79,9 +99,16 @@ export default function CheckInForm() {
         ))}
       </div>
 
-      <button type="submit" disabled={!complete} className={`${button.primary} w-full max-w-[240px]`}>
-        Submit check-in
-      </button>
+      <div className="flex w-full flex-col items-center gap-3">
+        <button type="submit" disabled={!complete || status === "sending" || status === "done"} className={`${button.primary} w-full max-w-[240px]`}>
+          {status === "sending" ? "Checking in…" : status === "done" ? "Checked in" : "Submit check-in"}
+        </button>
+        <p aria-live="polite" className={`min-h-5 text-center text-[13px] font-medium ${status === "done" ? "text-[#3c8a2e]" : "text-[#d32f2f]"}`}>
+          {status === "done" && "You're checked in. Welcome to service!"}
+          {status === "wrong" && "That code isn't right, or check-in has closed. Check the screen and try again."}
+          {status === "error" && "Couldn't reach the server. Please check your connection and try again."}
+        </p>
+      </div>
 
     </form>
   )

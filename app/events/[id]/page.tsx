@@ -6,13 +6,10 @@ import VisitCard from "@/components/visit-card"
 import EventCard from "@/components/event-card"
 import BackButton from "@/components/back-button"
 import SwipeRow from "@/components/swipe-row"
-import { events, getEvent } from "@/data/events"
-import { button, container, revealDelay, type } from "@/components/rcf/Ui"
+import { getEvent, getEvents } from "@/lib/content"
+import { container, revealDelay, type } from "@/components/rcf/Ui"
 
-// Pre-render one page per event at build time
-export function generateStaticParams() {
-  return events.map((event) => ({ id: event.id }))
-}
+export const revalidate = 60
 
 // Phones (mobile frame 491:1287): title, poster, centred details 12px apart (Overview, Date & Time, Location),
 //   160 x 40 Register button with the note 16px below, then "See More Upcoming Events" as a one-card swipe row
@@ -21,28 +18,26 @@ export function generateStaticParams() {
 //   divider, details panel on the right; then more events and "Visit us".
 export default async function EventDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const event = getEvent(id)
+  const [event, all] = await Promise.all([getEvent(id), getEvents(5)])
 
   if (!event) notFound()
 
   // "See more" shows other events (two on desktop, a swipe row on phones)
-  const moreEvents = events.filter((e) => e.id !== event.id)
+  const moreEvents = all.filter((e) => e.id !== event.id).slice(0, 4)
+  const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${event.place}, University of Ilorin`)}`
 
   // Desktop details panel
   const details = [
-    { label: "Overview", value: event.overview },
-    { label: "Recurrence", value: event.recurrence },
     { label: "Date", value: event.date },
     { label: "Time", value: event.time },
-    { label: "Cost", value: event.cost },
-    { label: "Location & Directions", value: event.location, href: event.directionsUrl },
+    { label: "Location & Directions", value: event.place, href: directionsUrl },
   ]
 
   // Phone details (mobile frame groups these differently)
   const mobileDetails = [
-    { label: "Overview", value: [event.overview, ...event.description].join(" ") },
+    ...(event.description.length ? [{ label: "Overview", value: event.description.join(" ") }] : []),
     { label: "Date & Time", value: `${event.date} by ${event.time}` },
-    { label: "Location", value: event.location, href: event.directionsUrl },
+    { label: "Location", value: event.place, href: directionsUrl },
   ]
 
   return (
@@ -59,8 +54,8 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ i
             <BackButton href="/events" />
           </div>
           <h1 data-reveal style={revealDelay(100)} className={`${type.title} text-[#1c1c1c] max-lg:font-semibold`}>
-            <span className="lg:hidden">{event.mobileTitle}</span>
-            <span className="hidden lg:inline">{event.shortTitle}</span>
+            <span className="lg:hidden">{event.title}</span>
+            <span className="hidden uppercase lg:inline">{event.title}</span>
           </h1>
         </div>
 
@@ -76,10 +71,7 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ i
               {event.description.map((paragraph) => (
                 <p key={paragraph} className="text-[#242323]/75">{paragraph}</p>
               ))}
-              <p className="font-medium text-[#1c1c1c]">{event.note}</p>
             </div>
-
-            <a href={event.registerUrl} data-reveal className={`${button.primary} hidden lg:inline-flex`}>Register now</a>
           </div>
 
           {/* Phones — centred detail groups, Register, note */}
@@ -98,8 +90,7 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ i
                 </div>
               ))}
             </dl>
-            <a href={event.registerUrl} className={`${button.primary} mt-10 w-[160px]`}>Register now</a>
-            <p className="mt-4 text-[13px] leading-[1.5] font-medium text-[#1c1c1c]/80">{event.mobileNote}</p>
+
           </div>
 
           {/* Desktop — divider + details panel (sticks while the description scrolls) */}
@@ -128,18 +119,18 @@ export default async function EventDetailsPage({ params }: { params: Promise<{ i
 
 
       {/* ===================== SEE MORE UPCOMING EVENTS ===================== */}
-      <section className={`${container} pt-4 pb-10 lg:pt-0 lg:pb-section`}>
+      {moreEvents.length > 0 && <section className={`${container} pt-4 pb-10 lg:pt-0 lg:pb-section`}>
         <h2 data-reveal className={`${type.heading} text-center text-[#1c1c1c] lg:text-left`}>See More Upcoming Events</h2>
 
         {/* Phones: one card at a time with dots (Figma). Tablet up: 2 columns */}
         <div className="mt-7 lg:mt-12">
           <SwipeRow>
             {moreEvents.map((e) => (
-              <EventCard key={e.id} image={e.image} date={e.listDate} shortDate={e.shortDate} title={e.title} detailsUrl={`/events/${e.id}`} align="center" />
+              <EventCard key={e.id} image={e.image} date={e.date} shortDate={e.shortDate} title={e.title} detailsUrl={`/events/${e.id}`} align="center" />
             ))}
           </SwipeRow>
         </div>
-      </section>
+      </section>}
 
 
       {/* ===================== VISIT US — desktop only (the mobile frame has none) ===================== */}

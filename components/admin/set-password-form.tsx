@@ -20,6 +20,18 @@ export default function SetPasswordForm() {
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
+    // Read the link before the Supabase client touches the URL. Links come in three shapes:
+    //   ?token_hash=…&type=invite|recovery  (links made in Users and roles)
+    //   #access_token=…&refresh_token=…     (Supabase's own invite emails)
+    //   ?code=…                             (Forgot password; the client exchanges it itself)
+    const search = new URLSearchParams(window.location.search)
+    const hash = new URLSearchParams(window.location.hash.slice(1))
+    const tokenHash = search.get("token_hash")
+    const type = search.get("type")
+    const access = hash.get("access_token")
+    const refresh = hash.get("refresh_token")
+    const linkError = hash.get("error_description") ?? search.get("error_description")
+
     const supabase = supabaseBrowser()
     let done = false
     const finish = async () => {
@@ -32,14 +44,38 @@ export default function SetPasswordForm() {
       setName(profile?.full_name ?? "")
       setReady("ok")
     }
-    // The token in the link is exchanged asynchronously; wait for it, with a fallback check
+    // A ?code= link is exchanged asynchronously; wait for it, with a fallback check
+    const waitForCode = !tokenHash && !access && !linkError
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "PASSWORD_RECOVERY" || event === "INITIAL_SESSION") finish()
+      if (waitForCode && (event === "SIGNED_IN" || event === "PASSWORD_RECOVERY" || event === "INITIAL_SESSION")) finish()
     })
-    const t = setTimeout(finish, 2500)
+    let t: ReturnType<typeof setTimeout> | undefined
+    const clearUrl = () => window.history.replaceState(null, "", window.location.pathname)
+    if (linkError) {
+      done = true
+      queueMicrotask(() => setReady("expired"))
+    } else if (tokenHash && (type === "invite" || type === "recovery")) {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(({ error }) => {
+        clearUrl()
+        if (error) {
+          done = true
+          setReady("expired")
+        } else finish()
+      })
+    } else if (access && refresh) {
+      supabase.auth.setSession({ access_token: access, refresh_token: refresh }).then(({ error }) => {
+        clearUrl()
+        if (error) {
+          done = true
+          setReady("expired")
+        } else finish()
+      })
+    } else {
+      t = setTimeout(finish, 2500)
+    }
     return () => {
       sub.subscription.unsubscribe()
-      clearTimeout(t)
+      if (t) clearTimeout(t)
     }
   }, [])
 

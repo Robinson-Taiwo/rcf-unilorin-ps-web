@@ -1,11 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { Plus } from "lucide-react"
+import { Check, Copy, Link2, Plus, X } from "lucide-react"
 import { useAdmin } from "@/components/admin/admin-shell"
 import InviteAdminModal from "@/components/admin/invite-admin-modal"
 import ModuleGate from "@/components/admin/module-gate"
-import { AdminHeader, Avatar, Tag, TableScroll, adminButton, adminCard, th } from "@/components/admin/ui"
+import { AdminHeader, Avatar, Tag, TableScroll, adminButton, adminCard, adminInput, th } from "@/components/admin/ui"
 import { db, logActivity, must, timeAgo, useLoad } from "@/lib/admin/data"
 import { roleLabel, type Role } from "@/lib/admin/permissions"
 
@@ -14,10 +14,12 @@ type Profile = { id: string; full_name: string; email: string; role: Role; statu
 const statusTag = { active: "green", invited: "yellow", inactive: "grey" } as const
 
 // Server-side actions that need the service-role key (see app/api/admin/users/route.ts)
-export async function usersApi(body: Record<string, string>) {
+// Returns a one-time link when the email couldn't be sent (or one was asked for)
+async function usersApi(body: Record<string, string>) {
   const res = await fetch("/api/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-  const json = (await res.json().catch(() => ({}))) as { error?: string }
+  const json = (await res.json().catch(() => ({}))) as { error?: string; link?: string }
   if (!res.ok) throw new Error(json.error ?? "Something went wrong.")
+  return json.link
 }
 
 // Figma "Users and roles" (Super Admin only): admins table with per-row actions, "Invite admin", role summaries.
@@ -26,6 +28,7 @@ export default function AdminUsersPage() {
   const [inviting, setInviting] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null)
+  const [shared, setShared] = useState<{ email: string; link: string; fallback: boolean } | null>(null)
 
   const { data, reload } = useLoad(async () => must(await db().from("profiles").select("*").order("created_at")) as Profile[])
   const users = data ?? []
@@ -34,8 +37,9 @@ export default function AdminUsersPage() {
     setBusy(u.id)
     setNotice(null)
     try {
-      await fn()
-      if (done) setNotice({ tone: "ok", text: done })
+      const link = await fn()
+      if (typeof link === "string") setShared({ email: u.email, link, fallback: label !== "make a link" })
+      else if (done) setNotice({ tone: "ok", text: done })
       reload()
     } catch (err) {
       setNotice({ tone: "error", text: err instanceof Error ? err.message : `Couldn't ${label}.` })
@@ -69,10 +73,11 @@ export default function AdminUsersPage() {
 
         <section className={`${adminCard} flex flex-col gap-5 p-5 sm:p-7`}>
           <h2 className="font-serif text-[22px] font-semibold text-[#1c1c1c]">Admins · {users.length}</h2>
+          {shared && <SharedLink {...shared} onClose={() => setShared(null)} />}
           {notice && <p role="status" className={`text-sm ${notice.tone === "ok" ? "text-[#5c8e13]" : "text-[#d32f2f]"}`}>{notice.text}</p>}
           <TableScroll minWidth={860}>
             <div className={`grid ${gridCols} gap-4 border-b border-[#e0e0e1] pb-3 ${th}`}>
-              <span>Name</span><span>Role</span><span>Status</span><span>Last active</span><span className="w-[240px]" />
+              <span>Name</span><span>Role</span><span>Status</span><span>Last active</span><span className="w-[280px]" />
             </div>
             <ul>
               {users.map((u) => {
@@ -90,7 +95,7 @@ export default function AdminUsersPage() {
                     <Tag tone={u.role === "super_admin" ? "yellow" : "blue"}>{roleLabel[u.role]}</Tag>
                     <Tag tone={statusTag[u.status]}>{u.status}</Tag>
                     <span className="text-[#242323]/85">{isMe ? "Now" : u.last_active_at ? timeAgo(u.last_active_at) : "—"}</span>
-                    <span className="flex w-[240px] justify-end gap-2">
+                    <span className="flex w-[280px] justify-end gap-2">
                       {isMe ? (
                         <span className="text-[15px] text-[#8a8d93]">You</span>
                       ) : u.status === "active" ? (
@@ -119,6 +124,9 @@ export default function AdminUsersPage() {
                         <>
                           <button type="button" disabled={disabled} onClick={() => run(u, "resend the invite", () => usersApi({ action: "resend", id: u.id }), `Invite sent again to ${u.email}.`)} className={adminButton.neutral("sm")}>
                             Resend invite
+                          </button>
+                          <button type="button" aria-label={`Copy an invite link for ${u.email}`} title="Copy invite link" disabled={disabled} onClick={() => run(u, "make a link", () => usersApi({ action: "link", id: u.id }))} className={`${adminButton.neutral("sm")} px-3`}>
+                            <Link2 className="size-4" />
                           </button>
                           <button
                             type="button"
@@ -159,12 +167,46 @@ export default function AdminUsersPage() {
           open
           onClose={() => setInviting(false)}
           onInvite={async (email, role) => {
-            await usersApi({ action: "invite", email, role })
-            setNotice({ tone: "ok", text: `Invite sent to ${email}.` })
+            const link = await usersApi({ action: "invite", email, role })
+            if (link) setShared({ email, link, fallback: true })
+            else setNotice({ tone: "ok", text: `Invite sent to ${email}.` })
             reload()
           }}
         />
       )}
     </ModuleGate>
+  )
+}
+
+// One-time link to pass on by hand (WhatsApp, text, your own email)
+function SharedLink({ email, link, fallback, onClose }: { email: string; link: string; fallback: boolean; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Clipboard blocked: the field is selected so it can be copied by hand
+    }
+  }
+  return (
+    <div role="status" className="flex animate-fade-in flex-col gap-3 rounded-[18px] border-[1.5px] border-[#00a8e8] bg-[#00a8e8]/10 p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[15px] leading-[1.5] text-[#1c1c1c]">
+          {fallback ? <>The invite email couldn&apos;t be sent (the email limit was reached), so here is the link instead. </> : null}
+          Send this to <span className="font-semibold">{email}</span> yourself. It works once and expires in 24 hours.
+        </p>
+        <button type="button" aria-label="Close" onClick={onClose} className="flex size-8 shrink-0 items-center justify-center rounded-full text-[#8a8d93] hover:bg-black/5 hover:text-[#1c1c1c]">
+          <X className="size-4" />
+        </button>
+      </div>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input readOnly value={link} onFocus={(e) => e.target.select()} aria-label="Invite link" className={`${adminInput} min-w-0 flex-1 bg-white text-[13px]`} />
+        <button type="button" onClick={copy} className={adminButton.primary()}>
+          {copied ? <Check className="size-4" /> : <Copy className="size-4" />} {copied ? "Copied" : "Copy link"}
+        </button>
+      </div>
+    </div>
   )
 }

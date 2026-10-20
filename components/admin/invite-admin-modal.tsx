@@ -4,17 +4,19 @@ import { useState, type FormEvent } from "react"
 import { Mail } from "lucide-react"
 import Modal from "@/components/admin/modal"
 import { adminButton, adminInput, adminLabel } from "@/components/admin/ui"
-import type { Role } from "@/lib/admin/permissions"
+import { ModulePicker } from "@/components/admin/module-picker"
+import { allModules, type Module, type Role } from "@/lib/admin/permissions"
 
 const roles: { value: Role; title: string; detail: string }[] = [
-  { value: "admin", title: "Admin", detail: "Check-In, Transport, Sermons, Events, Testimonies and Messages. No Giving, users, or deletions." },
+  { value: "admin", title: "Admin", detail: "Only the pages you choose below. No Giving, users, or deletions." },
   { value: "super_admin", title: "Super Admin", detail: "Full access, including Giving, Users and roles, and the Activity Log." },
 ]
 
 // Figma "Invite an admin" (opens over Users and roles after "Invite admin").
-export default function InviteAdminModal({ open, onClose, onInvite }: { open: boolean; onClose: () => void; onInvite: (email: string, role: Role) => Promise<void> }) {
+export default function InviteAdminModal({ open, onClose, onInvite }: { open: boolean; onClose: () => void; onInvite: (email: string, role: Role, modules: Module[]) => Promise<void> }) {
   const [email, setEmail] = useState("")
   const [role, setRole] = useState<Role>("admin")
+  const [picked, setPicked] = useState<Module[]>([...allModules])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
 
@@ -23,7 +25,7 @@ export default function InviteAdminModal({ open, onClose, onInvite }: { open: bo
     setBusy(true)
     setError("")
     try {
-      await onInvite(email.trim(), role)
+      await onInvite(email.trim(), role, picked)
       setEmail("")
       onClose()
     } catch (err) {
@@ -67,6 +69,8 @@ export default function InviteAdminModal({ open, onClose, onInvite }: { open: bo
             )
           })}
         </fieldset>
+
+        {role === "admin" && <ModulePicker value={picked} onChange={setPicked} />}
 
         <p className="text-[13px] text-[#8a8d93]">They get an email link to set a password. Invites expire after 24 hours; you can resend one.</p>
         {error && <p role="alert" className="text-sm text-[#d32f2f]">{error}</p>}

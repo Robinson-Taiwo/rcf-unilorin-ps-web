@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Download, Eye, RefreshCw } from "lucide-react"
 import { useAdmin } from "@/components/admin/admin-shell"
+import CheckInQr from "@/components/admin/checkin-qr"
 import ModuleGate from "@/components/admin/module-gate"
 import { AdminHeader, Segmented, Switch, Tag, TableScroll, adminButton, adminCard, cardTitle, th } from "@/components/admin/ui"
 import { db, fmtDayYear, fmtTime, logActivity, must, todayLagos, useLoad } from "@/lib/admin/data"
@@ -89,12 +90,12 @@ export default function AdminCheckInPage() {
   const nameOf = (key: string) => data?.services.find((s) => s.key === key)
 
   return (
-    <ModuleGate permission="checkIn" moduleName="Check-In">
+    <ModuleGate permission="check-in" moduleName="Check-In">
       <div className="flex flex-col gap-8">
         <AdminHeader
           pill="Check-in"
           title="Check-In Control"
-          subtitle="Set the code you will announce in service. Members enter it on the check-in page to be counted."
+          subtitle="Set the code you will announce in service, or show the QR code. Each phone can check in once per service."
           action={
             <a href="/check-in" target="_blank" rel="noreferrer" className={adminButton.outline()}>
               <Eye className="size-[18px]" /> Preview check-in page
@@ -149,6 +150,7 @@ export default function AdminCheckInPage() {
             </div>
           </section>
 
+          <div className="flex flex-col gap-5">
           <section className={`${adminCard} flex flex-col gap-5 p-5 sm:p-7`}>
             <h2 className={cardTitle}>Live attendance</h2>
             <p className="font-serif text-[72px] leading-none font-semibold tracking-[-0.03em] text-[#1c1c1c] sm:text-[88px]">{live.data?.count ?? 0}</p>
@@ -161,6 +163,13 @@ export default function AdminCheckInPage() {
               {live.data?.last ? ` Last check-in ${fmtTime(live.data.last)}.` : ""}
             </p>
           </section>
+
+          {todays ? (
+            <CheckInQr code={todays.code} serviceName={current?.name ?? service} dateLabel={fmtDayYear(`${today}T12:00:00Z`)} open={todays.is_open} />
+          ) : (
+            <section className={`${adminCard} p-5 text-[14px] leading-[1.55] text-[#8a8d93] sm:p-7`}>Save today&apos;s code to get a QR code members can scan.</section>
+          )}
+          </div>
         </div>
 
         <section className={`${adminCard} flex flex-col gap-5 p-5 sm:p-7`}>

@@ -1,11 +1,11 @@
 "use client"
 
 import { supabaseBrowser } from "@/lib/supabase/client"
-import type { Role } from "@/lib/admin/permissions"
+import type { Module, Role } from "@/lib/admin/permissions"
 
 // Admin sign-in on Supabase Auth. The rest of the admin code uses only these functions.
 
-export type AdminUser = { id: string; name: string; email: string; role: Role; status: "active" | "invited" | "inactive" }
+export type AdminUser = { id: string; name: string; email: string; role: Role; status: "active" | "invited" | "inactive"; modules: Module[] }
 
 export type SignInResult = { user: AdminUser } | { error: "credentials" | "inactive" | "no-profile" }
 
@@ -32,9 +32,9 @@ export async function getAdmin(): Promise<AdminUser | null> {
   const supabase = supabaseBrowser()
   const { data: auth } = await supabase.auth.getUser()
   if (!auth.user) return null
-  const { data } = await supabase.from("profiles").select("id, full_name, email, role, status").eq("id", auth.user.id).maybeSingle()
+  const { data } = await supabase.from("profiles").select("id, full_name, email, role, status, modules").eq("id", auth.user.id).maybeSingle()
   if (!data) return null
-  return { id: data.id, name: data.full_name || data.email.split("@")[0], email: data.email, role: data.role, status: data.status }
+  return { id: data.id, name: data.full_name || data.email.split("@")[0], email: data.email, role: data.role, status: data.status, modules: data.modules ?? [] }
 }
 
 export async function signOut() {

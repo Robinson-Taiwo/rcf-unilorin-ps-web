@@ -3,7 +3,9 @@ import { createClient } from "@supabase/supabase-js"
 import { supabaseServer, supabaseService } from "@/lib/supabase/server"
 
 // Invite, resend and cancel need the service-role key, so they run here — only for active Super Admins.
-type Body = { action: "invite" | "resend" | "link" | "cancel"; email?: string; role?: "admin" | "super_admin"; id?: string }
+type Body = { action: "invite" | "resend" | "link" | "cancel"; email?: string; role?: "admin" | "super_admin"; modules?: string[]; id?: string }
+
+const MODULES = ["check-in", "transport", "sermons", "events", "testimonies", "messages"]
 
 export async function POST(req: NextRequest) {
   const sb = await supabaseServer()
@@ -21,7 +23,7 @@ export async function POST(req: NextRequest) {
   // When Supabase can't send the email (its built-in sender allows only a few an hour), make the same
   // one-time link without sending it, so the Super Admin can pass it on (WhatsApp, text, their own email).
   const emailBlocked = (msg: string) => /rate limit|sending|smtp|email/i.test(msg)
-  async function shareLink(type: "invite" | "recovery", email: string, data?: Record<string, string>) {
+  async function shareLink(type: "invite" | "recovery", email: string, data?: Record<string, unknown>) {
     const res =
       type === "invite"
         ? await service.auth.admin.generateLink({ type: "invite", email, options: { data, redirectTo } })
@@ -34,15 +36,16 @@ export async function POST(req: NextRequest) {
   if (body.action === "invite") {
     const email = body.email?.trim().toLowerCase()
     const role = body.role === "super_admin" ? "super_admin" : "admin"
+    const modules = Array.isArray(body.modules) ? MODULES.filter((m) => body.modules!.includes(m)) : MODULES
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Enter a valid email." }, { status: 400 })
     const { data: existing } = await service.from("profiles").select("id").eq("email", email).maybeSingle()
     if (existing) return NextResponse.json({ error: "That email already has an admin account." }, { status: 409 })
-    const { error } = await service.auth.admin.inviteUserByEmail(email, { data: { role }, redirectTo })
+    const { error } = await service.auth.admin.inviteUserByEmail(email, { data: { role, modules }, redirectTo })
     const roleName = role === "super_admin" ? "Super Admin" : "Admin"
     if (error) {
       if (!emailBlocked(error.message)) return NextResponse.json({ error: error.message }, { status: 400 })
       // The user may already have been created before the email failed
-      let shared = await shareLink("invite", email, { role })
+      let shared = await shareLink("invite", email, { role, modules })
       if (shared.error) shared = await shareLink("recovery", email)
       if (shared.error) return NextResponse.json({ error: shared.error }, { status: 400 })
       await log(`Invited ${email} as ${roleName} (link shared directly)`)

@@ -14,7 +14,7 @@ export default function BookingCard({ trips }: { trips: PublicTrip[] }) {
   const [selected, setSelected] = useState<string | null>(trips[0]?.id ?? null)
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
-  const [status, setStatus] = useState<"idle" | "sending" | "booked" | "full" | "closed" | "error">("idle")
+  const [status, setStatus] = useState<"idle" | "sending" | "booked" | "already" | "full" | "closed" | "error">("idle")
   const [seats, setSeats] = useState<Record<string, number>>(Object.fromEntries(trips.map((t) => [t.id, t.seats_left])))
 
   const trip = trips.find((t) => t.id === selected)
@@ -24,11 +24,8 @@ export default function BookingCard({ trips }: { trips: PublicTrip[] }) {
     if (!trip || status === "sending") return
     setStatus("sending")
     const { data, error } = await supabasePublic().rpc("book_seat", { p_trip_id: trip.id, p_name: name.trim(), p_phone: phone.replace(/\s+/g, "") })
-    if (error) {
-      // Same phone on the same trip
-      return setStatus(error.code === "23505" ? "booked" : "error")
-    }
-    setStatus(data as "booked" | "full" | "closed")
+    if (error) return setStatus("error")
+    setStatus(data as "booked" | "already" | "full" | "closed")
     if (data === "booked") setSeats((s) => ({ ...s, [trip.id]: Math.max(0, (s[trip.id] ?? 1) - 1) }))
   }
 
@@ -38,11 +35,11 @@ export default function BookingCard({ trips }: { trips: PublicTrip[] }) {
 
       {trips.length === 0 ? (
         <p className="text-[14px] leading-[1.55] text-[#242323]/75">No trips are open for booking right now. Check back closer to the next service.</p>
-      ) : status === "booked" && trip ? (
+      ) : (status === "booked" || status === "already") && trip ? (
         <div role="status" className="flex animate-fade-in flex-col gap-2 rounded-[14px] border border-[#5c8e13] bg-[#5c8e13]/10 px-4 py-4">
-          <p className="text-[15px] font-semibold text-[#1c1c1c]">Your seat is reserved.</p>
+          <p className="text-[15px] font-semibold text-[#1c1c1c]">{status === "already" ? "You already have a seat on this trip." : "Your seat is reserved."}</p>
           <p className="text-[13px] leading-[1.5] text-[#242323]/75">
-            {label[trip.direction].join(" → ")} · {trip.day}, {trip.time} from {trip.pickup}. Please arrive 10 minutes early. You pay on the bus.
+            {label[trip.direction].join(" → ")} · {trip.day}, {trip.time} from {trip.pickup}. Please arrive 10 minutes early — late riders may lose their seat to someone waiting. You pay on the bus.
           </p>
         </div>
       ) : (

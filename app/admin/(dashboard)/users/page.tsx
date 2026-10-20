@@ -4,18 +4,19 @@ import { useState } from "react"
 import { Check, Copy, Link2, Plus, X } from "lucide-react"
 import { useAdmin } from "@/components/admin/admin-shell"
 import InviteAdminModal from "@/components/admin/invite-admin-modal"
+import { AccessModal, accessSummary } from "@/components/admin/module-picker"
 import ModuleGate from "@/components/admin/module-gate"
 import { AdminHeader, Avatar, Tag, TableScroll, adminButton, adminCard, adminInput, th } from "@/components/admin/ui"
 import { db, logActivity, must, timeAgo, useLoad } from "@/lib/admin/data"
-import { roleLabel, type Role } from "@/lib/admin/permissions"
+import { roleLabel, type Module, type Role } from "@/lib/admin/permissions"
 
-type Profile = { id: string; full_name: string; email: string; role: Role; status: "active" | "invited" | "inactive"; last_active_at: string | null; created_at: string }
+type Profile = { id: string; full_name: string; email: string; role: Role; status: "active" | "invited" | "inactive"; last_active_at: string | null; created_at: string; modules: Module[] }
 
 const statusTag = { active: "green", invited: "yellow", inactive: "grey" } as const
 
 // Server-side actions that need the service-role key (see app/api/admin/users/route.ts)
 // Returns a one-time link when the email couldn't be sent (or one was asked for)
-async function usersApi(body: Record<string, string>) {
+async function usersApi(body: Record<string, unknown>) {
   const res = await fetch("/api/admin/users", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
   const json = (await res.json().catch(() => ({}))) as { error?: string; link?: string }
   if (!res.ok) throw new Error(json.error ?? "Something went wrong.")
@@ -26,6 +27,7 @@ async function usersApi(body: Record<string, string>) {
 export default function AdminUsersPage() {
   const me = useAdmin()
   const [inviting, setInviting] = useState(false)
+  const [access, setAccess] = useState<Profile | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null)
   const [shared, setShared] = useState<{ email: string; link: string; fallback: boolean } | null>(null)
@@ -55,7 +57,7 @@ export default function AdminUsersPage() {
     })
 
   const name = (u: Profile) => u.full_name || u.email.split("@")[0]
-  const gridCols = "grid-cols-[2fr_1fr_0.9fr_1fr_auto]"
+  const gridCols = "grid-cols-[2fr_1fr_1.2fr_0.9fr_1fr_auto]"
 
   return (
     <ModuleGate permission="users" moduleName="Users and roles">
@@ -75,9 +77,9 @@ export default function AdminUsersPage() {
           <h2 className="font-serif text-[22px] font-semibold text-[#1c1c1c]">Admins · {users.length}</h2>
           {shared && <SharedLink {...shared} onClose={() => setShared(null)} />}
           {notice && <p role="status" className={`text-sm ${notice.tone === "ok" ? "text-[#5c8e13]" : "text-[#d32f2f]"}`}>{notice.text}</p>}
-          <TableScroll minWidth={860}>
+          <TableScroll minWidth={980}>
             <div className={`grid ${gridCols} gap-4 border-b border-[#e0e0e1] pb-3 ${th}`}>
-              <span>Name</span><span>Role</span><span>Status</span><span>Last active</span><span className="w-[280px]" />
+              <span>Name</span><span>Role</span><span>Access</span><span>Status</span><span>Last active</span><span className="w-[280px]" />
             </div>
             <ul>
               {users.map((u) => {
@@ -93,6 +95,13 @@ export default function AdminUsersPage() {
                       </span>
                     </span>
                     <Tag tone={u.role === "super_admin" ? "yellow" : "blue"}>{roleLabel[u.role]}</Tag>
+                    {u.role === "super_admin" ? (
+                      <span className="text-[14px] text-[#8a8d93]">Everything</span>
+                    ) : (
+                      <button type="button" disabled={isMe || disabled} onClick={() => setAccess(u)} className="w-fit truncate text-left text-[14px] font-medium text-[#00a8e8] hover:underline disabled:text-[#8a8d93] disabled:no-underline">
+                        {accessSummary(u.modules ?? [])}
+                      </button>
+                    )}
                     <Tag tone={statusTag[u.status]}>{u.status}</Tag>
                     <span className="text-[#242323]/85">{isMe ? "Now" : u.last_active_at ? timeAgo(u.last_active_at) : "—"}</span>
                     <span className="flex w-[280px] justify-end gap-2">
@@ -157,17 +166,29 @@ export default function AdminUsersPage() {
           </div>
           <div className={`${adminCard} flex flex-col items-start gap-3 p-6`}>
             <Tag tone="blue">Admin</Tag>
-            <p className="text-[15px] leading-[1.55] text-[#1c1c1c]">Check-In, Transport, Sermons, Events, Testimonies and Messages. No Giving, user management, or deletions.</p>
+            <p className="text-[15px] leading-[1.55] text-[#1c1c1c]">Only the pages you give them — e.g. Transport alone for the transport secretary. Click their Access to change it. No Giving, user management, or deletions.</p>
           </div>
         </div>
       </div>
 
+      {access && (
+        <AccessModal
+          name={access.full_name || access.email.split("@")[0]}
+          initial={access.modules ?? []}
+          onClose={() => setAccess(null)}
+          onSave={async (picked) => {
+            must(await db().from("profiles").update({ modules: picked }).eq("id", access.id).select().single())
+            await logActivity(`Changed ${access.full_name || access.email}'s access to: ${accessSummary(picked)}`, "users")
+            reload()
+          }}
+        />
+      )}
       {inviting && (
         <InviteAdminModal
           open
           onClose={() => setInviting(false)}
-          onInvite={async (email, role) => {
-            const link = await usersApi({ action: "invite", email, role })
+          onInvite={async (email, role, picked) => {
+            const link = await usersApi({ action: "invite", email, role, modules: picked })
             if (link) setShared({ email, link, fallback: true })
             else setNotice({ tone: "ok", text: `Invite sent to ${email}.` })
             reload()

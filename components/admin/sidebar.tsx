@@ -14,14 +14,14 @@ type Item = { label: string; href: string; icon: LucideIcon; permission: Permiss
 
 // Figma sidebar. MANAGE: the day-to-day modules (Giving only for Super Admins).
 // ADMINISTRATION: Users & Roles and Activity Log, Super Admins only.
-// Items the signed-in role can't use are left out.
+// Items the signed-in admin can't use are left out (Admins see only the pages they were given).
 const manage: Item[] = [
   { label: "Dashboard", href: "/admin", icon: House, permission: "dashboard" },
-  { label: "Check-In", href: "/admin/check-in", icon: CircleCheck, permission: "checkIn" },
+  { label: "Check-In", href: "/admin/check-in", icon: CircleCheck, permission: "check-in" },
   { label: "Transport", href: "/admin/transport", icon: Bus, permission: "transport" },
   { label: "Giving", href: "/admin/giving", icon: Gift, permission: "giving" },
-  { label: "Sermons", href: "/admin/sermons", icon: Mic, permission: "content" },
-  { label: "Events", href: "/admin/events", icon: CalendarDays, permission: "content" },
+  { label: "Sermons", href: "/admin/sermons", icon: Mic, permission: "sermons" },
+  { label: "Events", href: "/admin/events", icon: CalendarDays, permission: "events" },
   { label: "Testimonies & Prayer", href: "/admin/testimonies", icon: MessageCircle, permission: "testimonies", badge: "testimonies" },
   { label: "Messages", href: "/admin/messages", icon: Mail, permission: "messages", badge: "messages" },
 ]
@@ -39,8 +39,8 @@ export default function Sidebar({ user, onNavigate }: { user: AdminUser; onNavig
   // Badge counts: submissions waiting for review, unread messages
   const { data: badges } = useLoad(async () => {
     const [subs, msgs] = await Promise.all([
-      db().from("submissions").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      db().from("messages").select("id", { count: "exact", head: true }).eq("is_read", false).eq("archived", false),
+      can(user, "testimonies") ? db().from("submissions").select("id", { count: "exact", head: true }).eq("status", "pending") : { count: 0 },
+      can(user, "messages") ? db().from("messages").select("id", { count: "exact", head: true }).eq("is_read", false).eq("archived", false) : { count: 0 },
     ])
     return { testimonies: subs.count ?? 0, messages: msgs.count ?? 0 } as Record<string, number>
   }, [pathname])
@@ -84,12 +84,12 @@ export default function Sidebar({ user, onNavigate }: { user: AdminUser; onNavig
       <nav aria-label="Admin" className="flex flex-1 flex-col gap-6 overflow-y-auto">
         <div className="flex flex-col gap-2.5">
           <p className={`${adminCaps} px-3.5 text-white/55`}>Manage</p>
-          <ul className="flex flex-col gap-1">{manage.filter((i) => can(user.role, i.permission)).map(link)}</ul>
+          <ul className="flex flex-col gap-1">{manage.filter((i) => can(user, i.permission)).map(link)}</ul>
         </div>
-        {administration.some((i) => can(user.role, i.permission)) && (
+        {administration.some((i) => can(user, i.permission)) && (
           <div className="flex flex-col gap-2.5">
             <p className={`${adminCaps} px-3.5 text-white/55`}>Administration</p>
-            <ul className="flex flex-col gap-1">{administration.filter((i) => can(user.role, i.permission)).map(link)}</ul>
+            <ul className="flex flex-col gap-1">{administration.filter((i) => can(user, i.permission)).map(link)}</ul>
           </div>
         )}
       </nav>

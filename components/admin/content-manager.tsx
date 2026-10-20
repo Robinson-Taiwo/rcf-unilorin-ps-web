@@ -47,7 +47,7 @@ export default function ContentManager<R extends ContentRow>({
   renderForm: (props: FormProps<R>) => ReactNode
 }) {
   const user = useAdmin()
-  const canDelete = can(user.role, "contentDelete")
+  const canDelete = can(user, "contentDelete")
   const [filter, setFilter] = useState<"all" | ContentStatus>("all")
   const [editing, setEditing] = useState<R | null>(null)
   const [error, setError] = useState("")
@@ -94,7 +94,7 @@ export default function ContentManager<R extends ContentRow>({
   }
 
   return (
-    <ModuleGate permission="content" moduleName={title}>
+    <ModuleGate permission={table} moduleName={title}>
       <div className="flex flex-col gap-8">
         <AdminHeader
           pill="Content"

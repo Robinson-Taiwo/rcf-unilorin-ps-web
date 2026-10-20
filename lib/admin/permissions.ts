@@ -1,7 +1,6 @@
-// Roles & Permissions — from the Figma "Access control" frame.
-// Two roles share one dashboard. Super Admin sees every module; Admin sees the day-to-day modules only.
-// The design marks this as a proposed split — change it here and the sidebar, pages and
-// "Your access" card all follow.
+// Who can open what.
+// Super Admin: everything. Admin: only the pages a Super Admin has ticked for them (Users and roles → Access),
+// so e.g. the transport secretary can be given Transport alone. The database enforces the same rules (has_module).
 
 export type Role = "super_admin" | "admin"
 
@@ -10,23 +9,32 @@ export const roleLabel: Record<Role, string> = {
   admin: "Admin",
 }
 
-// Every module/action in the table. `admin` is whether the Admin role has it (Super Admin has everything).
-export const permissions = {
-  dashboard: { label: "Dashboard overview", detail: "Stats, needs-attention list, activity", admin: true, why: "Admin does not see Giving or user stats" },
-  checkIn: { label: "Check-In", detail: "Set code, open/close, live count, history", admin: true, why: "Needed by whoever runs the service" },
-  transport: { label: "Transport", detail: "Create trips, bookings, boarding list", admin: true, why: "Day-to-day operations" },
-  transportDelete: { label: "Transport — delete a trip", detail: "", admin: false, why: "Destructive; Super Admin only" },
-  giving: { label: "Giving", detail: "Account details, other church needs", admin: false, why: "Financial details — fraud risk if changed" },
-  content: { label: "Sermons & Events", detail: "Add, edit, upload audio", admin: true, why: "Content updates" },
-  contentDelete: { label: "Sermons & Events — delete", detail: "", admin: false, why: "Admin can unpublish instead" },
-  testimonies: { label: "Testimonies & Prayer", detail: "Review, approve, reject", admin: true, why: "Prayer requests stay private to admins" },
-  messages: { label: "Messages", detail: "Contact form inbox", admin: true, why: "Reply and archive" },
-  users: { label: "Users & Roles", detail: "Invite, change role, deactivate", admin: false, why: "Controls who can enter" },
-  activity: { label: "Activity Log", detail: "Who changed what, and when", admin: false, why: "Accountability for Super Admin" },
+// Pages a Super Admin can give to an Admin, in sidebar order
+export const modules = [
+  { key: "check-in", label: "Check-In", detail: "Set the service code, QR code, live count" },
+  { key: "transport", label: "Transport", detail: "Trips, bookings, boarding list" },
+  { key: "sermons", label: "Sermons", detail: "Upload and publish sermons" },
+  { key: "events", label: "Events", detail: "Add and publish events" },
+  { key: "testimonies", label: "Testimonies & Prayer", detail: "Review testimonies and prayer requests" },
+  { key: "messages", label: "Messages", detail: "Contact inbox" },
+] as const
+
+export type Module = (typeof modules)[number]["key"]
+export const allModules: Module[] = modules.map((m) => m.key)
+export const moduleLabel = Object.fromEntries(modules.map((m) => [m.key, m.label])) as Record<Module, string>
+
+// Always Super Admin only
+export const superOnly = {
+  giving: "Giving",
+  users: "Users and roles",
+  activity: "Activity log",
+  transportDelete: "Deleting trips",
+  contentDelete: "Deleting sermons and events",
 } as const
 
-export type Permission = keyof typeof permissions
+export type Permission = "dashboard" | Module | keyof typeof superOnly
 
-export function can(role: Role, permission: Permission) {
-  return role === "super_admin" || permissions[permission].admin
+export function can(user: { role: Role; modules?: readonly string[] | null }, permission: Permission) {
+  if (user.role === "super_admin" || permission === "dashboard") return true
+  return (user.modules ?? []).includes(permission)
 }

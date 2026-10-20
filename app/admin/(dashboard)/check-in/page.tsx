@@ -1,15 +1,15 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Download, Eye, RefreshCw, Search, Users } from "lucide-react"
+import { useEffect, useState, type FormEvent } from "react"
+import { Download, EyeOff, Eye, Plus, RefreshCw, RotateCcw, Search, Users } from "lucide-react"
 import { useAdmin } from "@/components/admin/admin-shell"
 import CheckInQr from "@/components/admin/checkin-qr"
 import ModuleGate from "@/components/admin/module-gate"
-import { AdminHeader, Avatar, Segmented, Switch, Tag, TableScroll, adminButton, adminCard, adminInput, cardTitle, th } from "@/components/admin/ui"
+import { AdminHeader, Avatar, Switch, Tag, TableScroll, adminButton, adminCard, adminInput, cardTitle, th } from "@/components/admin/ui"
 import { db, fmtDayYear, fmtTime, logActivity, must, todayLagos, useLoad } from "@/lib/admin/data"
 import { downloadCsv } from "@/lib/admin/csv"
 
-type Service = { key: string; name: string; time_label: string }
+type Service = { key: string; name: string; time_label: string; active: boolean; sort: number }
 type Session = { id: string; service_key: string; service_date: string; code: string; is_open: boolean; checkins: { count: number }[] }
 
 const daysAgo = (iso: string, n: number) => {
@@ -28,10 +28,12 @@ export default function AdminCheckInPage() {
   // Which service's names are shown (defaults to today's)
   const [viewing, setViewing] = useState<string | null>(null)
   const [who, setWho] = useState("")
+  const [addingProgram, setAddingProgram] = useState(false)
+  const [error, setError] = useState("")
 
   const { data, reload } = useLoad(async () => {
     const [services, sessions] = await Promise.all([
-      db().from("services").select("key, name, time_label").order("sort"),
+      db().from("services").select("key, name, time_label, active, sort").order("sort"),
       db().from("checkin_sessions").select("id, service_key, service_date, code, is_open, checkins(count)").order("service_date", { ascending: false }).limit(30),
     ])
     return { services: must(services) as Service[], sessions: must(sessions) as Session[] }
@@ -73,6 +75,13 @@ export default function AdminCheckInPage() {
   }
 
   async function save() {
+    // Each program running today needs its own code, so a code always points to one program
+    const clash = data?.sessions.find((s) => s.service_date === today && s.service_key !== service && s.code === code)
+    if (clash) {
+      setError(`${nameOf(clash.service_key)?.name ?? clash.service_key} already uses ${code} today. Pick another code.`)
+      return
+    }
+    setError("")
     setStatus("saving")
     const res = await db()
       .from("checkin_sessions")
@@ -80,6 +89,31 @@ export default function AdminCheckInPage() {
     if (res.error) return setStatus("error")
     await logActivity(`Set the ${current?.name ?? service} check-in code`, "check-in")
     setStatus("saved")
+    reload()
+  }
+
+  // Start the day again for this program: removes today's code and everyone checked in to it
+  async function resetToday() {
+    if (!todays) return
+    const count = live.data?.count ?? 0
+    const what = current?.name ?? service
+    if (!window.confirm(`Reset today's ${what} check-in?\n\nThis removes the code${count ? ` and the ${count} check-in${count > 1 ? "s" : ""} so far` : ""}. You can then set a new code. This can't be undone.`)) return
+    setError("")
+    const res = await db().from("checkin_sessions").delete().eq("id", todays.id)
+    if (res.error) return setError(res.error.message)
+    await logActivity(`Reset today's ${what} check-in${count ? ` (${count} check-ins removed)` : ""}`, "check-in")
+    setViewing(null)
+    setCode("")
+    reload()
+  }
+
+  async function hideProgram() {
+    if (!current || !window.confirm(`Hide “${current.name}”? Its attendance history stays. You can add it back later.`)) return
+    setError("")
+    const res = await db().from("services").update({ active: false }).eq("key", current.key)
+    if (res.error) return setError(res.error.message)
+    await logActivity(`Hid the program “${current.name}”`, "check-in")
+    setService(data?.services.find((s) => s.active && s.key !== current.key)?.key ?? "sunday")
     reload()
   }
 
@@ -120,7 +154,35 @@ export default function AdminCheckInPage() {
         <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
           <section className={`${adminCard} flex flex-col gap-6 p-5 sm:p-7`}>
             <h2 className={cardTitle}>Today&apos;s service code</h2>
-            <Segmented label="Service" options={(data?.services ?? []).map((s) => ({ value: s.key, label: s.key }))} value={service} onChange={setService} />
+            {/* Services and other programs; wraps onto more lines as programs are added */}
+            <div role="tablist" aria-label="Service or program" className="flex flex-wrap gap-2">
+              {(data?.services ?? []).filter((s) => s.active || s.key === service).map((s) => {
+                const active = s.key === service
+                return (
+                  <button
+                    key={s.key}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => { setService(s.key); setViewing(null); setError("") }}
+                    className={`h-10 cursor-pointer rounded-full px-4 text-[14px] font-medium transition-colors ${active ? "bg-[#00a8e8] text-white" : "bg-[#e8e8e9] text-[#00a8e8] hover:bg-[#00a8e8]/15"}`}
+                  >
+                    {s.name}
+                  </button>
+                )
+              })}
+              <button type="button" onClick={() => setAddingProgram((v) => !v)} className="flex h-10 cursor-pointer items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-[#00a8e8] px-4 text-[14px] font-medium text-[#00a8e8] hover:bg-[#00a8e8]/10">
+                <Plus className="size-4" /> Add program
+              </button>
+            </div>
+            {addingProgram && (
+              <AddProgram
+                next={(data?.services.reduce((n, s) => Math.max(n, s.sort), 0) ?? 0) + 1}
+                taken={(data?.services ?? []).map((s) => s.key)}
+                userId={user.id}
+                onDone={(key) => { setAddingProgram(false); if (key) { setService(key); reload() } }}
+              />
+            )}
 
             <div className="flex gap-3">
               {digits.map((d, i) => (
@@ -138,7 +200,8 @@ export default function AdminCheckInPage() {
             </div>
 
             <p className="text-sm leading-[1.55] text-[#8a8d93]">
-              {current ? `${current.name} · ${current.time_label}. ` : ""}Announce this code from the pulpit or show it on screen.
+              {current ? `${current.name}${current.time_label ? ` · ${current.time_label}` : ""}. ` : ""}Announce this code from the pulpit or show it on screen.
+              {todays ? " Saving a new code keeps everyone already checked in." : ""}
             </p>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -150,6 +213,7 @@ export default function AdminCheckInPage() {
               </button>
               {status === "error" && <span className="text-sm text-[#d32f2f]">Couldn&apos;t save. Try again.</span>}
             </div>
+            {error && <p role="alert" className="text-sm text-[#d32f2f]">{error}</p>}
 
             <div className="flex items-center gap-4 rounded-[16px] bg-[#f2f2f2] p-4">
               <Switch checked={todays?.is_open ?? false} onChange={toggleOpen} label="Check-in open" />
@@ -161,6 +225,17 @@ export default function AdminCheckInPage() {
                   {!todays ? "Save a code to open check-in." : todays.is_open ? "Turn off to stop new check-ins. The code stays saved." : "Turn on to let members check in with the code."}
                 </span>
               </span>
+            </div>
+
+            <div className="flex flex-wrap gap-2 border-t border-[#e0e0e1] pt-5">
+              <button type="button" disabled={!todays} onClick={resetToday} className={adminButton.danger("sm")}>
+                <RotateCcw className="size-4" /> Reset today&apos;s check-in
+              </button>
+              {current && !["sunday", "tuesday", "thursday"].includes(current.key) && (
+                <button type="button" onClick={hideProgram} className={adminButton.neutral("sm")}>
+                  <EyeOff className="size-4" /> Hide this program
+                </button>
+              )}
             </div>
           </section>
 
@@ -281,5 +356,47 @@ export default function AdminCheckInPage() {
         </section>
       </div>
     </ModuleGate>
+  )
+}
+
+// A program besides the weekly services (vigil, conference day, outreach…). Gets its own code each day it runs.
+function AddProgram({ next, taken, userId, onDone }: { next: number; taken: string[]; userId: string; onDone: (key: string | null) => void }) {
+  const [name, setName] = useState("")
+  const [time, setTime] = useState("")
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState("")
+
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const base = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "program"
+    let key = base
+    for (let i = 2; taken.includes(key); i++) key = `${base}-${i}`
+    setBusy(true)
+    setError("")
+    const res = await db().from("services").insert({ key, name: name.trim(), time_label: time.trim(), sort: next, created_by: userId })
+    setBusy(false)
+    if (res.error) return setError(res.error.message)
+    await logActivity(`Added the program “${name.trim()}”`, "check-in")
+    onDone(key)
+  }
+
+  return (
+    <form onSubmit={submit} className="flex animate-fade-in flex-col gap-3 rounded-[16px] border-[1.5px] border-[#00a8e8] bg-[#00a8e8]/5 p-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1.4fr_1fr]">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[13px] font-medium text-[#1c1c1c]">Program name</span>
+          <input required autoFocus maxLength={60} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Night Vigil" className={`${adminInput} bg-white`} />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[13px] font-medium text-[#1c1c1c]">Time <span className="text-[#8a8d93]">(optional)</span></span>
+          <input maxLength={30} value={time} onChange={(e) => setTime(e.target.value)} placeholder="e.g. 10:00 PM" className={`${adminInput} bg-white`} />
+        </label>
+      </div>
+      {error && <p role="alert" className="text-sm text-[#d32f2f]">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={() => onDone(null)} className={adminButton.neutral("sm")}>Cancel</button>
+        <button type="submit" disabled={busy || !name.trim()} className={adminButton.primary("sm")}>{busy ? "Adding…" : "Add program"}</button>
+      </div>
+    </form>
   )
 }

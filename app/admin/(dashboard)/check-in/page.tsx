@@ -1,11 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Download, Eye, RefreshCw } from "lucide-react"
+import { Download, Eye, RefreshCw, Search, Users } from "lucide-react"
 import { useAdmin } from "@/components/admin/admin-shell"
 import CheckInQr from "@/components/admin/checkin-qr"
 import ModuleGate from "@/components/admin/module-gate"
-import { AdminHeader, Segmented, Switch, Tag, TableScroll, adminButton, adminCard, cardTitle, th } from "@/components/admin/ui"
+import { AdminHeader, Avatar, Segmented, Switch, Tag, TableScroll, adminButton, adminCard, adminInput, cardTitle, th } from "@/components/admin/ui"
 import { db, fmtDayYear, fmtTime, logActivity, must, todayLagos, useLoad } from "@/lib/admin/data"
 import { downloadCsv } from "@/lib/admin/csv"
 
@@ -25,6 +25,9 @@ export default function AdminCheckInPage() {
   const [service, setService] = useState("sunday")
   const [code, setCode] = useState("")
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle")
+  // Which service's names are shown (defaults to today's)
+  const [viewing, setViewing] = useState<string | null>(null)
+  const [who, setWho] = useState("")
 
   const { data, reload } = useLoad(async () => {
     const [services, sessions] = await Promise.all([
@@ -88,6 +91,17 @@ export default function AdminCheckInPage() {
   }
 
   const nameOf = (key: string) => data?.services.find((s) => s.key === key)
+
+  // Names of everyone who checked in to the chosen service (refreshes with the live count)
+  const shownSession = data?.sessions.find((s) => s.id === (viewing ?? todays?.id)) ?? null
+  const people = useLoad(async () => {
+    if (!shownSession) return []
+    const res = await db().from("checkins").select("id, member_name, member_email, created_at").eq("session_id", shownSession.id).order("created_at")
+    return must(res) as { id: number; member_name: string | null; member_email: string | null; created_at: string }[]
+  }, [shownSession?.id, live.data?.count])
+  const q = who.trim().toLowerCase()
+  const shownPeople = (people.data ?? []).filter((p) => !q || `${p.member_name} ${p.member_email}`.toLowerCase().includes(q))
+  const sessionLabel = shownSession ? `${nameOf(shownSession.service_key)?.name ?? shownSession.service_key} · ${fmtDayYear(`${shownSession.service_date}T12:00:00Z`)}` : ""
 
   return (
     <ModuleGate permission="check-in" moduleName="Check-In">
@@ -172,6 +186,51 @@ export default function AdminCheckInPage() {
           </div>
         </div>
 
+        {shownSession && (
+          <section id="who-checked-in" className={`${adminCard} flex scroll-mt-24 flex-col gap-5 p-5 sm:p-7`}>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex min-w-0 flex-col gap-1">
+                <h2 className={cardTitle}>Who checked in</h2>
+                <p className="text-[13px] text-[#8a8d93]">{sessionLabel} · {people.data?.length ?? 0} people</p>
+              </div>
+              <div className="flex w-full flex-wrap gap-3 sm:w-auto">
+                <label className="relative min-w-0 flex-1 sm:w-[240px] sm:flex-none">
+                  <Search className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-[#8a8d93]" />
+                  <input value={who} onChange={(e) => setWho(e.target.value)} placeholder="Search names" aria-label="Search names" className={`${adminInput} pl-11`} />
+                </label>
+                <button
+                  type="button"
+                  disabled={!people.data?.length}
+                  onClick={() =>
+                    downloadCsv(`attendance-${shownSession.service_key}-${shownSession.service_date}.csv`, [
+                      ["Name", "Email", "Checked in at"],
+                      ...(people.data ?? []).map((p) => [p.member_name ?? "", p.member_email ?? "", fmtTime(p.created_at)]),
+                    ])
+                  }
+                  className={adminButton.neutral()}
+                >
+                  <Download className="size-4" /> Export names
+                </button>
+              </div>
+            </div>
+            <ul className="grid grid-cols-1 gap-x-6 sm:grid-cols-2 xl:grid-cols-3">
+              {shownPeople.map((p) => (
+                <li key={p.id} className="flex min-w-0 items-center gap-3 border-b border-[#e0e0e1] py-3">
+                  <Avatar name={p.member_name || "Guest"} tone={p.member_name ? "blue" : "grey"} />
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate text-[15px] text-[#1c1c1c]">{p.member_name || "Checked in before names were collected"}</span>
+                    <span className="truncate text-[13px] text-[#8a8d93]">{p.member_email ?? ""}</span>
+                  </span>
+                  <span className="shrink-0 text-[13px] text-[#8a8d93]">{fmtTime(p.created_at)}</span>
+                </li>
+              ))}
+              {people.data && shownPeople.length === 0 && (
+                <li className="col-span-full py-8 text-center text-[15px] text-[#8a8d93]">{q ? `No one matches “${who}”.` : "No one has checked in yet."}</li>
+              )}
+            </ul>
+          </section>
+        )}
+
         <section className={`${adminCard} flex flex-col gap-5 p-5 sm:p-7`}>
           <div className="flex items-center justify-between gap-4">
             <h2 className={cardTitle}>Attendance history</h2>
@@ -189,13 +248,13 @@ export default function AdminCheckInPage() {
               <Download className="size-4" /> Export CSV
             </button>
           </div>
-          <TableScroll minWidth={640}>
-            <div className={`grid grid-cols-[2fr_1.5fr_0.8fr_1fr_0.9fr] gap-4 border-b border-[#e0e0e1] pb-3 ${th}`}>
-              <span>Service</span><span>Date</span><span>Code</span><span>Check-ins</span><span>Status</span>
+          <TableScroll minWidth={760}>
+            <div className={`grid grid-cols-[2fr_1.5fr_0.8fr_1fr_0.9fr_auto] gap-4 border-b border-[#e0e0e1] pb-3 ${th}`}>
+              <span>Service</span><span>Date</span><span>Code</span><span>Check-ins</span><span>Status</span><span className="w-[96px]" />
             </div>
             <ul>
               {(data?.sessions ?? []).slice(0, 12).map((s) => (
-                <li key={s.id} className="grid grid-cols-[2fr_1.5fr_0.8fr_1fr_0.9fr] items-center gap-4 border-b border-[#e0e0e1] py-4 text-[15px]">
+                <li key={s.id} className="grid grid-cols-[2fr_1.5fr_0.8fr_1fr_0.9fr_auto] items-center gap-4 border-b border-[#e0e0e1] py-4 text-[15px]">
                   <span className="flex flex-col gap-0.5">
                     <span className="text-[#1c1c1c]">{nameOf(s.service_key)?.name ?? s.service_key}</span>
                     <span className="text-[13px] text-[#8a8d93]">{nameOf(s.service_key)?.time_label}</span>
@@ -204,6 +263,16 @@ export default function AdminCheckInPage() {
                   <span className="font-semibold text-[#1c1c1c]">{s.code}</span>
                   <span className="text-[#242323]/85">{s.checkins[0]?.count ?? 0}</span>
                   <Tag tone={s.is_open ? "green" : "grey"}>{s.is_open ? "Open" : "Closed"}</Tag>
+                  <span className="flex w-[96px] justify-end">
+                    <button
+                      type="button"
+                      aria-pressed={shownSession?.id === s.id}
+                      onClick={() => { setViewing(s.id); setWho(""); document.getElementById("who-checked-in")?.scrollIntoView({ behavior: "smooth", block: "start" }) }}
+                      className={shownSession?.id === s.id ? adminButton.primary("sm") : adminButton.neutral("sm")}
+                    >
+                      <Users className="size-4" /> Names
+                    </button>
+                  </span>
                 </li>
               ))}
               {data && data.sessions.length === 0 && <li className="py-10 text-center text-[15px] text-[#8a8d93]">No services yet. Save today&apos;s code to start.</li>}

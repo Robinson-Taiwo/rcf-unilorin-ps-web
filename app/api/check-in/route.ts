@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { supabasePublic } from "@/lib/supabase/public"
+import { supabaseServer } from "@/lib/supabase/server"
 
-// Check-in without signing in. Each phone is recognised by two ids: a long-lived cookie set here and an id the
-// page keeps in the browser's storage. Both are checked, so clearing one of them isn't enough to check in twice.
+// Check-in. Members sign in with Google (one check-in per account), and each phone is also recognised by two ids:
+// a long-lived cookie set here and an id the page keeps in the browser's storage. So two accounts on one phone,
+// or one account on two phones, still count once.
 const COOKIE = "rcf_device"
 const TWO_YEARS = 60 * 60 * 24 * 730
 const isId = (v: unknown): v is string => typeof v === "string" && /^[0-9a-f-]{36}$/i.test(v)
@@ -19,20 +20,25 @@ function withCookie(res: NextResponse, id: string) {
   return res
 }
 
-// Has this phone already checked in today? → { service: "Sunday Service" | null }
+// Who is signed in, and has this account or phone already checked in today?
+// → { member: { name, email } | null, service: "Sunday Service" | null }
 export async function GET(req: NextRequest) {
   const { primary, alt } = ids(req, req.nextUrl.searchParams.get("device"))
-  const { data } = await supabasePublic().rpc("my_checkin_today", { p_device_id: primary, p_alt_id: alt })
-  return withCookie(NextResponse.json({ service: (data as string | null) ?? null }), primary)
+  const sb = await supabaseServer()
+  const [{ data: auth }, { data }] = await Promise.all([sb.auth.getUser(), sb.rpc("my_checkin_today", { p_device_id: primary, p_alt_id: alt })])
+  const u = auth.user
+  const member = u ? { name: (u.user_metadata?.full_name ?? u.user_metadata?.name ?? u.email?.split("@")[0] ?? "") as string, email: u.email ?? "" } : null
+  return withCookie(NextResponse.json({ member, service: (data as string | null) ?? null }), primary)
 }
 
-// { code, device } → { status: "ok" | "already" | "invalid" }
+// { code, device } → { status: "ok" | "already" | "invalid" | "signin" }
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as { code?: unknown; device?: unknown }
   const code = typeof body.code === "string" ? body.code.replace(/[^0-9a-z]/gi, "").toUpperCase().slice(0, 3) : ""
   if (code.length !== 3) return NextResponse.json({ status: "invalid" })
   const { primary, alt } = ids(req, body.device)
-  const { data, error } = await supabasePublic().rpc("check_in", { p_code: code, p_device_id: primary, p_alt_id: alt })
+  const sb = await supabaseServer()
+  const { data, error } = await sb.rpc("check_in", { p_code: code, p_device_id: primary, p_alt_id: alt })
   if (error) return NextResponse.json({ status: "error" }, { status: 500 })
   return withCookie(NextResponse.json({ status: data }), primary)
 }

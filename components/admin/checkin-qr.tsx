@@ -5,7 +5,7 @@ import QRCode from "qrcode"
 import { Copy, Download } from "lucide-react"
 import { adminButton, adminCard, cardTitle } from "@/components/admin/ui"
 
-// QR code for today's check-in. Scanning opens /check-in?code=ABC, which checks the phone in straight away.
+// QR code for today's check-in. Scanning opens /check-in?c=ABC: sign in with Google, then checked in at once.
 // "Download" saves a print-ready poster (PNG) with the QR, the service, the date and the code.
 export default function CheckInQr({ code, serviceName, dateLabel, open }: { code: string; serviceName: string; dateLabel: string; open: boolean }) {
   const [src, setSrc] = useState<string | null>(null)
@@ -13,7 +13,7 @@ export default function CheckInQr({ code, serviceName, dateLabel, open }: { code
   const [url, setUrl] = useState("")
 
   useEffect(() => {
-    const link = `${window.location.origin}/check-in?code=${encodeURIComponent(code)}`
+    const link = `${window.location.origin}/check-in?c=${encodeURIComponent(code)}`
     let live = true
     QRCode.toDataURL(link, { width: 480, margin: 1, errorCorrectionLevel: "M", color: { dark: "#1c1c1c", light: "#ffffff" } }).then((d) => {
       if (live) {
@@ -90,7 +90,7 @@ export default function CheckInQr({ code, serviceName, dateLabel, open }: { code
         </div>
         <div className="flex min-w-0 flex-col gap-3">
           <p className="text-[14px] leading-[1.55] text-[#8a8d93]">
-            Show it on screen or print it. Scanning checks the phone in at once, with no code to type. Each phone counts once.
+            Show it on screen or print it. Scanning opens check-in with the code filled in; members sign in with Google once. Each person and each phone counts once.
           </p>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={download} disabled={!src} className={adminButton.primary("sm")}>
